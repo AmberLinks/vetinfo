@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>獣医療 救急疾患＆計算ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .content-section h3 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            margin-top: 1.75rem; /* mt-7 */
+            margin-bottom: 0.75rem; /* mb-3 */
+            padding-bottom: 0.5rem; /* pb-2 */
+            border-bottom: 2px solid #34d399; /* border-b-2 border-emerald-400 */
+            color: #047857; /* text-emerald-700 */
+        }
+        .content-section ul { list-style-type: disc; padding-left: 1.75rem; margin-top: 0.5rem; }
+        .content-section li { margin-bottom: 0.5rem; }
+        
+        /* Table styles */
+        .table-container { overflow-x: auto; margin-top: 1rem; }
+        .custom-table { width: 100%; border-collapse: collapse; }
+        .custom-table th, .custom-table td { border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; }
+        .custom-table th { background-color: #f3f4f6; font-weight: 600; }
+        .custom-table tr:nth-child(even) { background-color: #f9fafb; }
+
+        /* Calculator styles */
+        .calc-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .calc-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .calc-result-box {
+            background-color: #f0fdfa; /* emerald-50 */
+            border: 1px solid #a7f3d0; /* emerald-200 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        .calc-formula {
+            background-color: #e5e7eb; /* gray-200 */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation (1st column) -->
+        <nav id="sidebar" class="w-16 md:w-56 bg-gray-800 text-white flex flex-col transition-all duration-300 flex-shrink-0">
+            <div class="px-4 py-5 border-b border-gray-700 flex items-center justify-center md:justify-start">
+                <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v11.494m-9-5.747h18"/>
+                </svg>
+                <h1 class="text-xl font-bold ml-3 hidden md:block">Vet Guide</h1>
+            </div>
+            <ul id="nav-list" class="flex-grow overflow-y-auto">
+                <!-- Navigation items will be injected here by JavaScript -->
+            </ul>
+             <div class="px-4 py-3 border-t border-gray-700">
+                <p class="text-xs text-gray-500 text-center hidden md:block">&copy; 2024 Vet Emergency Guide</p>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex overflow-hidden">
+            <!-- List Panel (2nd column) -->
+            <div id="list-panel" class="w-full md:w-1/4 lg:w-1/5 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
+                 <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <h2 id="category-title" class="text-xl font-bold text-gray-700">カテゴリを選択</h2>
+                </div>
+                <ul id="item-list">
+                    <!-- List for the selected category will be injected here -->
+                </ul>
+            </div>
+
+            <!-- Detail Panel (3rd column) -->
+            <div id="detail-panel" class="flex-1 overflow-y-auto p-6 md:p-8 lg:p-10">
+                <div id="detail-content">
+                    <!-- Details will be injected here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- microCMS Configuration ---
+        const MICROCMS_CONFIG = {
+            apiKey: '66U37gIl7UHa9gJqv5OyV3OI6IbBh5Awu7jS',
+            serviceDomain: 'vetinfo'
+        };
+
+        // --- SPA-Managed Data (Calculators) ---
+        const calculatorDefinitions = {
+            "犬・猫": {
+                "計算ツール": {
+                    "カロリー計算 (RER/DER)": { "type": "calculator", "id": "calorie_dogcat" },
+                    "体表面積 (BSA)": { "type": "calculator", "id": "bsa" },
+                    "輸血量計算": { "type": "calculator", "id": "transfusion" },
+                    "CRI計算 (μg/kg/min)": { "type": "calculator", "id": "cri_gamma" },
+                    "CRI計算 (mg/kg/hr)": { "type": "calculator", "id": "cri_mg_hr" },
+                    "CRI計算 (希釈なし)": { "type": "calculator", "id": "cri_no_dilution" }
+                }
+            },
+            "エキゾチックアニマル": {
+                 "計算ツール": {
+                    "経口投薬量計算": { "type": "calculator", "id": "medication_exotic_oral" },
+                    "飲水投薬量計算": { "type": "calculator", "id": "medication_exotic_water" }
+                }
+            }
+        };
+
+        // --- Global State ---
+        let contentData = {}; // This will be populated from microCMS
+        let activeMajorCategory = null;
+        let activeSubCategory = null;
+        let activeItem = null;
+
+        // --- DOM Elements ---
+        const navList = document.getElementById('nav-list');
+        const categoryTitle = document.getElementById('category-title');
+        const itemList = document.getElementById('item-list');
+        const detailContent = document.getElementById('detail-content');
+
+        // --- Data Fetching & Processing ---
+        async function fetchMicroCMSData() {
+            setLoading(detailContent);
+            try {
+                const response = await fetch(`https://${MICROCMS_CONFIG.serviceDomain}.microcms.io/api/v1/articles?limit=100&depth=2`, {
+                    headers: { 'X-MICROCMS-API-KEY': MICROCMS_CONFIG.apiKey }
+                });
+                if (!response.ok) throw new Error(`API fetch failed: ${response.status}`);
+                const data = await response.json();
+                return processFetchedData(data.contents);
+            } catch (error) {
+                console.error("Failed to fetch from microCMS:", error);
+                setError(detailContent, "コンテンツの読み込みに失敗しました。");
+                return {};
+            }
+        }
+
+        function processFetchedData(articles) {
+            const processedData = {};
+            articles.forEach(article => {
+                const majorCat = article.animal_group?.group_name;
+                const subCat = article.content_category?.category_name;
+                if (!majorCat || !subCat) return;
+
+                if (!processedData[majorCat]) processedData[majorCat] = {};
+                if (!processedData[majorCat][subCat]) processedData[majorCat][subCat] = {};
+                
+                if (majorCat === "エキゾチックアニマル" && subCat === "救急疾患" && article.exotic_species) {
+                    const species = article.exotic_species.species_name;
+                    if (!processedData[majorCat][subCat][species]) {
+                        processedData[majorCat][subCat][species] = {};
+                    }
+                    processedData[majorCat][subCat][species][article.title] = article;
+                } else {
+                    processedData[majorCat][subCat][article.title] = article;
+                }
+            });
+            return processedData;
+        }
+
+        // --- Rendering Functions ---
+        function renderNavigation() {
+            navList.innerHTML = '';
+            const majorCategories = { "犬・猫": "🐾", "エキゾチックアニマル": "🐇" };
+            
+            Object.keys(majorCategories).forEach(cat => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200" data-major-category="${cat}">
+                        <span class="w-8 text-center text-lg">${majorCategories[cat]}</span>
+                        <span class="ml-3 hidden md:inline">${cat}</span>
+                    </a>
+                `;
+                navList.appendChild(li);
+            });
+        }
+
+        function renderSubCategoryList(majorCat) {
+            categoryTitle.textContent = majorCat;
+            const contentSubCats = contentData[majorCat] ? Object.keys(contentData[majorCat]) : [];
+            const calcSubCats = calculatorDefinitions[majorCat] ? Object.keys(calculatorDefinitions[majorCat]) : [];
+            const allSubCats = [...contentSubCats, ...calcSubCats];
+
+            itemList.innerHTML = allSubCats.map(subCat => `
+                <li>
+                    <a href="#" class="block px-4 py-3 text-gray-700 hover:bg-emerald-50 border-b border-gray-100" data-major-category="${majorCat}" data-sub-category="${subCat}">
+                        ${subCat}
+                    </a>
+                </li>
+            `).join('');
+        }
+
+        function renderItemList(majorCat, subCat, species = null) {
+            let path = `${majorCat} > ${subCat}`;
+            if (species) {
+                path += ` > ${species}`;
+            }
+            categoryTitle.textContent = path;
+
+            const isCalc = calculatorDefinitions[majorCat] && calculatorDefinitions[majorCat][subCat];
+            let dataRoot = isCalc ? calculatorDefinitions[majorCat][subCat] : contentData[majorCat][subCat];
+            if (species) {
+                dataRoot = dataRoot[species];
+            }
+            const items = Object.keys(dataRoot);
+
+            let listHtml = `<li><a href="#" class="block px-4 py-3 font-bold text-emerald-600 hover:bg-emerald-50 border-b border-gray-100" data-major-category="${majorCat}" data-sub-category="BACK" data-species="${species || ''}">← 戻る</a></li>`;
+            
+            listHtml += items.map(item => `
+                <li>
+                    <a href="#" class="block px-4 py-3 text-gray-700 hover:bg-emerald-50 border-b border-gray-100" data-major-category="${majorCat}" data-sub-category="${subCat}" data-item="${item}" data-species="${species || ''}">
+                        ${item}
+                    </a>
+                </li>
+            `).join('');
+            itemList.innerHTML = listHtml;
+        }
+        
+        function renderDetail(majorCat, subCat, itemName, species = null) {
+            const isCalc = calculatorDefinitions[majorCat] && calculatorDefinitions[majorCat][subCat];
+            let data;
+            let titlePath = `${majorCat} > ${subCat}`;
+
+            if (isCalc) {
+                data = calculatorDefinitions[majorCat][subCat][itemName];
+            } else {
+                data = species ? contentData[majorCat][subCat][species][itemName] : contentData[majorCat][subCat][itemName];
+                if (species) {
+                    titlePath += ` > ${species}`;
+                }
+            }
+            
+            if (data.type === 'calculator') {
+                renderCalculator(itemName, data.id);
+                return;
+            }
+
+            let contentHtml = `<h2 class="text-3xl font-bold text-gray-800 mb-2">${data.title}</h2>`;
+            contentHtml += `<p class="text-sm text-gray-500 mb-6">カテゴリ: ${titlePath}</p>`;
+
+            if (data.overview) {
+                 contentHtml += `<div class="content-section"><h3>概要</h3><p class="text-gray-700 leading-relaxed">${data.overview}</p></div>`;
+            }
+            if (data.body) {
+                contentHtml += `<div class="content-section"><h3>詳細</h3>${data.body}</div>`;
+            }
+
+            detailContent.innerHTML = contentHtml;
+        }
+
+        // --- UI State Functions ---
+        function setWelcomeMessage() {
+            detailContent.innerHTML = `
+                <div class="text-center py-20">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" /></svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">データを選択してください</h3>
+                    <p class="mt-1 text-sm text-gray-500">左のメニューからカテゴリと項目を選択すると、ここに詳細が表示されます。</p>
+                </div>`;
+        }
+
+        function setLoading(element) {
+            element.innerHTML = '<div class="loader"></div>';
+        }
+
+        function setError(element, message) {
+            element.innerHTML = `<div class="text-center py-20 text-red-600">${message}</div>`;
+        }
+        
+        // --- Event Handlers ---
+        navList.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+            e.preventDefault();
+
+            const majorCat = link.dataset.majorCategory;
+            if (activeMajorCategory === majorCat) return;
+
+            activeMajorCategory = majorCat;
+            activeSubCategory = null;
+            activeItem = null;
+
+            document.querySelectorAll('#nav-list a').forEach(a => a.classList.remove('bg-gray-700', 'text-white'));
+            link.classList.add('bg-gray-700', 'text-white');
+
+            renderSubCategoryList(majorCat);
+            setWelcomeMessage();
+        });
+
+        itemList.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+            e.preventDefault();
+
+            const majorCat = link.dataset.majorCategory;
+            const subCat = link.dataset.subCategory;
+            const itemName = link.dataset.item;
+            const species = link.dataset.species;
+
+            if (subCat === 'BACK') {
+                if (species) { // Came from a species list
+                    renderItemList(majorCat, "救急疾患");
+                } else { // Came from a subcategory list
+                    activeSubCategory = null;
+                    renderSubCategoryList(majorCat);
+                }
+                activeItem = null;
+                setWelcomeMessage();
+                return;
+            }
+
+            if (itemName) { // Final item clicked
+                if (activeItem === itemName && activeSubCategory === subCat) return;
+                activeItem = itemName;
+                activeSubCategory = subCat;
+                document.querySelectorAll('#item-list a').forEach(a => a.classList.remove('bg-emerald-100', 'font-semibold'));
+                link.classList.add('bg-emerald-100', 'font-semibold');
+                renderDetail(majorCat, subCat, itemName, species);
+            } else { // Sub-category clicked
+                if (activeSubCategory === subCat) return;
+                activeSubCategory = subCat;
+                activeItem = null;
+                if (majorCat === "エキゾチックアニマル" && subCat === "救急疾患") {
+                    renderItemList(majorCat, subCat); // Show species list
+                } else {
+                    renderItemList(majorCat, subCat); // Show item list directly
+                }
+                setWelcomeMessage();
+            }
+        });
+
+        // --- Initialization ---
+        async function init() {
+            renderNavigation();
+            setWelcomeMessage();
+            contentData = await fetchMicroCMSData();
+            
+            const firstCategoryLink = navList.querySelector('a');
+            if (firstCategoryLink) {
+                firstCategoryLink.click();
+            }
+        }
+
+        // --- Calculator Rendering & Logic ---
+        function renderCalculator(title, id) {
+             let html = `<h2 class="text-3xl font-bold text-gray-800 mb-6">${title}</h2>`;
+            html += `<div id="calc-${id}" class="space-y-4">`;
+            
+            switch(id) {
+                case 'calorie_dogcat':
+                    html += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="cal-weight" class="block text-sm font-medium text-gray-700">体重 (kg)</label><input type="number" id="cal-weight" class="mt-1 calc-input" placeholder="例: 5"></div>
+                            <div><label for="cal-factor" class="block text-sm font-medium text-gray-700">状態</label><select id="cal-factor" class="mt-1 calc-input">
+                                <optgroup label="犬"><option value="1.6">避妊・去勢済 成犬</option><option value="1.8">未避妊・未去勢 成犬</option><option value="1.4">肥満傾向</option><option value="1.0">減量中</option><option value="1.2">重症</option><option value="3.0">成長期 (〜4ヶ月)</option><option value="2.0">成長期 (4ヶ月〜)</option><option value="1.8">妊娠前期</option><option value="3.0">妊娠後期</option><option value="4">授乳期(1-2子)</option><option value="5">授乳期(3-4子)</option><option value="6">授乳期(5子以上)</option></optgroup>
+                                <optgroup label="猫"><option value="1.2">避妊・去勢済 成猫</option><option value="1.4">未避妊・未去勢 成猫</option><option value="1.0">肥満傾向</option><option value="0.8">減量中</option><option value="1.2">重症</option><option value="2.5">成長期</option><option value="2.0">妊娠期</option><option value="2.5">授乳期</option></optgroup>
+                            </select></div>
+                            <div><label for="cal-food-density" class="block text-sm font-medium text-gray-700">フードのカロリー (kcal/100g)</label><input type="number" id="cal-food-density" class="mt-1 calc-input" placeholder="例: 380"></div>
+                        </div>`;
+                    break;
+                case 'bsa':
+                     html += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="bsa-species" class="block text-sm font-medium text-gray-700">動物種</label><select id="bsa-species" class="mt-1 calc-input"><option value="dog">犬</option><option value="cat">猫</option></select></div>
+                            <div><label for="bsa-weight" class="block text-sm font-medium text-gray-700">体重 (kg)</label><input type="number" id="bsa-weight" class="mt-1 calc-input" placeholder="例: 10"></div>
+                        </div>`;
+                    break;
+                case 'transfusion':
+                    html += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div><label for="tf-species" class="block text-sm font-medium text-gray-700">動物種</label><select id="tf-species" class="mt-1 calc-input"><option value="dog">犬</option><option value="cat">猫</option></select></div>
+                            <div><label for="tf-weight" class="block text-sm font-medium text-gray-700">患者の体重 (kg)</label><input type="number" id="tf-weight" class="mt-1 calc-input" placeholder="例: 5"></div>
+                            <div><label for="tf-patient-pcv" class="block text-sm font-medium text-gray-700">患者のPCV (%)</label><input type="number" id="tf-patient-pcv" class="mt-1 calc-input" placeholder="例: 15"></div>
+                            <div><label for="tf-target-pcv" class="block text-sm font-medium text-gray-700">目標PCV (%)</label><input type="number" id="tf-target-pcv" class="mt-1 calc-input" placeholder="例: 25"></div>
+                             <div><label for="tf-donor-pcv" class="block text-sm font-medium text-gray-700">供血動物のPCV (%)</label><input type="number" id="tf-donor-pcv" class="mt-1 calc-input" placeholder="例: 45"></div>
+                        </div>`;
+                    break;
+                case 'cri_gamma':
+                     html += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="cri-g-conc" class="block text-sm font-medium text-gray-700">薬剤濃度 (mg/mL)</label><input type="number" id="cri-g-conc" class="mt-1 calc-input" placeholder="例: 20"></div>
+                            <div><label for="cri-g-weight" class="block text-sm font-medium text-gray-700">体重 (kg)</label><input type="number" id="cri-g-weight" class="mt-1 calc-input" placeholder="例: 5"></div>
+                            <div><label for="cri-g-rate" class="block text-sm font-medium text-gray-700">点滴流量 (mL/hr)</label><input type="number" id="cri-g-rate" class="mt-1 calc-input" placeholder="例: 10"></div>
+                            <div><label for="cri-g-total-vol" class="block text-sm font-medium text-gray-700">輸液全体量 (mL)</label><input type="number" id="cri-g-total-vol" class="mt-1 calc-input" placeholder="例: 250"></div>
+                            <div><label for="cri-g-dose" class="block text-sm font-medium text-gray-700">投与量 (μg/kg/min)</label><input type="number" id="cri-g-dose" class="mt-1 calc-input" placeholder="例: 5"></div>
+                        </div>`;
+                    break;
+                case 'medication_exotic_oral':
+                    html += `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label for="med-exo-weight" class="block text-sm font-medium text-gray-700">体重 (g)</label><input type="number" id="med-exo-weight" class="mt-1 calc-input" placeholder="例: 800"></div>
+                            <div><label for="med-exo-dose" class="block text-sm font-medium text-gray-700">投与量 (mg/kg)</label><input type="number" id="med-exo-dose" class="mt-1 calc-input" placeholder="例: 5"></div>
+                            <div><label for="med-exo-strength" class="block text-sm font-medium text-gray-700">薬剤の含有量 (mg/錠)</label><input type="number" id="med-exo-strength" class="mt-1 calc-input" placeholder="例: 100"></div>
+                            <div><label for="med-exo-drops" class="block text-sm font-medium text-gray-700">1回あたりの目標投与滴下数</label><input type="number" id="med-exo-drops" class="mt-1 calc-input" placeholder="例: 2"></div>
+                        </div>`;
+                    break;
+                case 'medication_exotic_water':
+                    html += `
+                        <div>
+                            <div class="border-b border-gray-200"><nav class="-mb-px flex space-x-8" id="water-med-tabs"><a href="#" class="border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="from_dose">投与量から計算</a><a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="from_conc">目標濃度から計算</a></nav></div>
+                            <div id="tab-content-from_dose" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label for="wm-fd-weight" class="block text-sm font-medium text-gray-700">体重 (g)</label><input type="number" id="wm-fd-weight" class="mt-1 calc-input" placeholder="例: 40"></div>
+                                <div><label for="wm-fd-dose" class="block text-sm font-medium text-gray-700">投与量 (mg/kg/日)</label><input type="number" id="wm-fd-dose" class="mt-1 calc-input" placeholder="例: 1"></div>
+                                <div><label for="wm-fd-intake" class="block text-sm font-medium text-gray-700">1日の飲水量 (mL)</label><input type="number" id="wm-fd-intake" class="mt-1 calc-input" placeholder="例: 4"></div>
+                                <div><label for="wm-fd-strength" class="block text-sm font-medium text-gray-700">薬剤の含有量 (mg/錠 or g)</label><input type="number" id="wm-fd-strength" class="mt-1 calc-input" placeholder="例: 10"></div>
+                                <div><label for="wm-fd-volume" class="block text-sm font-medium text-gray-700">1包を溶解する水の量 (mL)</label><input type="number" id="wm-fd-volume" class="mt-1 calc-input" placeholder="例: 25"></div>
+                                <div><label for="wm-fd-days" class="block text-sm font-medium text-gray-700">投与日数 (日)</label><input type="number" id="wm-fd-days" class="mt-1 calc-input" placeholder="例: 10"></div>
+                            </div>
+                            <div id="tab-content-from_conc" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                                <div><label for="wm-fc-conc" class="block text-sm font-medium text-gray-700">目標濃度 (mg/L)</label><input type="number" id="wm-fc-conc" class="mt-1 calc-input" placeholder="例: 10"></div>
+                                <div><label for="wm-fc-strength" class="block text-sm font-medium text-gray-700">薬剤の含有量 (mg/錠 or g)</label><input type="number" id="wm-fc-strength" class="mt-1 calc-input" placeholder="例: 10"></div>
+                                <div><label for="wm-fc-volume" class="block text-sm font-medium text-gray-700">1包を溶解する水の量 (mL)</label><input type="number" id="wm-fc-volume" class="mt-1 calc-input" placeholder="例: 25"></div>
+                                <div><label for="wm-fc-days" class="block text-sm font-medium text-gray-700">投与日数 (日)</label><input type="number" id="wm-fc-days" class="mt-1 calc-input" placeholder="例: 10"></div>
+                            </div>
+                        </div>`;
+                    break;
+            }
+            
+            html += `<div id="calc-result-${id}" class="calc-result-box hidden"></div></div>`;
+            detailContent.innerHTML = html;
+            
+            document.getElementById(`calc-${id}`)?.addEventListener('input', () => calculate(id));
+            if (id === 'medication_exotic_water') {
+                document.getElementById('water-med-tabs').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tab = e.target.closest('a');
+                    if (!tab) return;
+                    document.querySelectorAll('#water-med-tabs a').forEach(t => t.classList.remove('border-emerald-500', 'text-emerald-600'));
+                    tab.classList.add('border-emerald-500', 'text-emerald-600');
+                    document.getElementById('tab-content-from_dose').classList.toggle('hidden', tab.dataset.tab !== 'from_dose');
+                    document.getElementById('tab-content-from_conc').classList.toggle('hidden', tab.dataset.tab !== 'from_conc');
+                    calculate(id);
+                });
+            }
+        }
+
+        function calculate(id) {
+            const resultBox = document.getElementById(`calc-result-${id}`);
+            let inputs = {};
+            let resultHtml = '';
+            
+            try {
+                 switch(id) {
+                    case 'calorie_dogcat':
+                        inputs = {
+                            w: parseFloat(document.getElementById('cal-weight').value),
+                            f: parseFloat(document.getElementById('cal-factor').value),
+                            d: parseFloat(document.getElementById('cal-food-density').value)
+                        };
+                        if (Object.values(inputs).some(isNaN) || inputs.w <= 0 || inputs.d <= 0) throw new Error();
+                        
+                        const rer = 70 * Math.pow(inputs.w, 0.75);
+                        const der = rer * inputs.f;
+                        const foodAmount = (der / inputs.d) * 100;
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p><strong>安静時エネルギー要求量 (RER):</strong> ${rer.toFixed(1)} kcal/日</p>
+                            <p><strong>1日あたりのエネルギー要求量 (DER):</strong> ${der.toFixed(1)} kcal/日</p>
+                            <p class="text-xl font-bold mt-2 text-emerald-700"><strong>1日の給与量:</strong> ${foodAmount.toFixed(1)} g/日</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+RER (kcal/日) = 70 * (体重(kg) ^ 0.75)
+  = 70 * (${inputs.w} ^ 0.75) = ${rer.toFixed(1)}
+
+DER (kcal/日) = RER * 活動係数
+  = ${rer.toFixed(1)} * ${inputs.f} = ${der.toFixed(1)}
+  
+給与量 (g/日) = DER / (フードkcal / 100g) * 100
+  = ${der.toFixed(1)} / ${inputs.d} * 100 = ${foodAmount.toFixed(1)}
+                            </div>`;
+                        break;
+                    case 'medication_exotic_oral':
+                        inputs = {
+                            w: parseFloat(document.getElementById('med-exo-weight').value) / 1000, // g to kg
+                            dose: parseFloat(document.getElementById('med-exo-dose').value),
+                            strength: parseFloat(document.getElementById('med-exo-strength').value),
+                            drops: parseFloat(document.getElementById('med-exo-drops').value)
+                        };
+                        if (Object.values(inputs).some(isNaN) || inputs.w <= 0 || inputs.strength <= 0 || inputs.drops <= 0) throw new Error();
+
+                        const requiredDoseMg = inputs.w * inputs.dose;
+                        const doseVolumeMl = inputs.drops * 0.05;
+                        const requiredConc = requiredDoseMg / doseVolumeMl;
+                        const waterVolume = inputs.strength / requiredConc;
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p><strong>1回に必要な薬剤量:</strong> ${requiredDoseMg.toFixed(3)} mg</p>
+                            <p><strong>目標とする投与液量:</strong> ${doseVolumeMl.toFixed(3)} mL (${inputs.drops} 滴)</p>
+                            <p><strong>必要な薬液濃度:</strong> ${requiredConc.toFixed(2)} mg/mL</p>
+                            <p class="text-xl font-bold mt-2 text-emerald-700"><strong>${inputs.strength}mgの薬剤1錠</strong>を <strong>${waterVolume.toFixed(2)} mL</strong> の水に溶解してください。</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+1回に必要な薬剤量(mg) = 体重(kg) * 投与量(mg/kg)
+  = ${inputs.w.toFixed(3)} * ${inputs.dose} = ${requiredDoseMg.toFixed(3)}
+
+目標投与液量(mL) = 目標滴下数 * 0.05
+  = ${inputs.drops} * 0.05 = ${doseVolumeMl.toFixed(3)}
+
+必要な薬液濃度(mg/mL) = 必要な薬剤量(mg) / 目標投与液量(mL)
+  = ${requiredDoseMg.toFixed(3)} / ${doseVolumeMl.toFixed(3)} = ${requiredConc.toFixed(2)}
+
+溶解に必要な水の量(mL) = 薬剤の含有量(mg) / 必要な薬液濃度(mg/mL)
+  = ${inputs.strength} / ${requiredConc.toFixed(2)} = ${waterVolume.toFixed(2)}
+                            </div>`;
+                        break;
+                    case 'medication_exotic_water':
+                        const activeTab = document.querySelector('#water-med-tabs a.border-emerald-500').dataset.tab;
+                        if (activeTab === 'from_dose') {
+                            inputs = {
+                                w: parseFloat(document.getElementById('wm-fd-weight').value) / 1000, // g to kg
+                                dose: parseFloat(document.getElementById('wm-fd-dose').value),
+                                intake: parseFloat(document.getElementById('wm-fd-intake').value) / 1000, // mL to L
+                                strength: parseFloat(document.getElementById('wm-fd-strength').value),
+                                volume: parseFloat(document.getElementById('wm-fd-volume').value) / 1000, // mL to L
+                                days: parseInt(document.getElementById('wm-fd-days').value)
+                            };
+                            if (Object.values(inputs).some(isNaN) || inputs.w <= 0 || inputs.intake <= 0 || inputs.strength <= 0 || inputs.volume <= 0 || inputs.days <= 0) throw new Error();
+
+                            const dailyDoseMg = inputs.w * inputs.dose;
+                            const targetConc = dailyDoseMg / inputs.intake;
+                            const drugPerBottle = targetConc * inputs.volume;
+                            const totalDrug = drugPerBottle * inputs.days;
+                            const totalTablets = totalDrug / inputs.strength;
+
+                            resultHtml = `
+                                <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                                <p><strong>目標濃度:</strong> ${targetConc.toFixed(2)} mg/L</p>
+                                <p class="text-xl font-bold mt-2 text-emerald-700">薬剤 <strong>${totalTablets.toFixed(2)} 錠(or g)</strong> を <strong>${inputs.days}包</strong> に分け、<br>1包を1日1回、飲水 ${inputs.volume * 1000} mLに混ぜて投与します。</p>
+                                <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                                <div class="calc-formula">
+1日の必要薬剤量(mg) = 体重(kg) * 投与量(mg/kg/日) = ${dailyDoseMg.toFixed(3)}
+目標濃度(mg/L) = 1日の必要薬剤量(mg) / 1日の飲水量(L) = ${targetConc.toFixed(2)}
+1包あたりの薬剤量(mg) = 目標濃度(mg/L) * 溶解する水の量(L) = ${drugPerBottle.toFixed(3)}
+総薬剤量(mg) = 1包あたりの薬剤量(mg) * 投与日数 = ${totalDrug.toFixed(3)}
+総錠剤数(錠) = 総薬剤量(mg) / 薬剤の含有量(mg) = ${totalTablets.toFixed(2)}
+                                </div>`;
+
+                        } else { // from_conc
+                            inputs = {
+                                conc: parseFloat(document.getElementById('wm-fc-conc').value),
+                                strength: parseFloat(document.getElementById('wm-fc-strength').value),
+                                volume: parseFloat(document.getElementById('wm-fc-volume').value) / 1000, // mL to L
+                                days: parseInt(document.getElementById('wm-fc-days').value)
+                            };
+                             if (Object.values(inputs).some(isNaN) || inputs.conc <= 0 || inputs.strength <= 0 || inputs.volume <= 0 || inputs.days <= 0) throw new Error();
+                            
+                            const drugPerBottle_fc = inputs.conc * inputs.volume;
+                            const totalDrug_fc = drugPerBottle_fc * inputs.days;
+                            const totalTablets_fc = totalDrug_fc / inputs.strength;
+
+                             resultHtml = `
+                                <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                                <p class="text-xl font-bold mt-2 text-emerald-700">薬剤 <strong>${totalTablets_fc.toFixed(2)} 錠(or g)</strong> を <strong>${inputs.days}包</strong> に分け、<br>1包を1日1回、飲水 ${inputs.volume * 1000} mLに混ぜて投与します。</p>
+                                <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                                <div class="calc-formula">
+1包あたりの薬剤量(mg) = 目標濃度(mg/L) * 溶解する水の量(L) = ${drugPerBottle_fc.toFixed(3)}
+総薬剤量(mg) = 1包あたりの薬剤量(mg) * 投与日数 = ${totalDrug_fc.toFixed(3)}
+総錠剤数(錠) = 総薬剤量(mg) / 薬剤の含有量(mg) = ${totalTablets_fc.toFixed(2)}
+                                </div>`;
+                        }
+                        break;
+                    
+                    case 'bsa':
+                        inputs = {
+                            w: parseFloat(document.getElementById('bsa-weight').value),
+                            s: document.getElementById('bsa-species').value
+                        };
+                        if (isNaN(inputs.w) || inputs.w <= 0) throw new Error();
+                        const k = inputs.s === 'dog' ? 10.1 : 10.0;
+                        const bsa = k * Math.pow(inputs.w * 1000, 2/3) / 10000;
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p class="text-xl font-bold mt-2 text-emerald-700"><strong>体表面積 (BSA):</strong> ${bsa.toFixed(4)} m²</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
+  = (${k} * ((${inputs.w}*1000) ^ (2/3))) / 10000 = ${bsa.toFixed(4)}
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold text-lg mb-2">BSA早見表</h4>
+                                <div class="table-container">
+                                    <table class="custom-table text-sm">
+                                        <thead><tr><th>体重(kg)</th><th>BSA(m²)</th><th>体重(kg)</th><th>BSA(m²)</th><th>体重(kg)</th><th>BSA(m²)</th></tr></thead>
+                                        <tbody id="bsa-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            `;
+                        break;
+
+                    case 'transfusion':
+                        inputs = {
+                            s: document.getElementById('tf-species').value,
+                            w: parseFloat(document.getElementById('tf-weight').value),
+                            pPCV: parseFloat(document.getElementById('tf-patient-pcv').value),
+                            tPCV: parseFloat(document.getElementById('tf-target-pcv').value),
+                            dPCV: parseFloat(document.getElementById('tf-donor-pcv').value)
+                        };
+                        if (Object.values(inputs).slice(1).some(isNaN)) throw new Error();
+                        const bloodVolConstant = inputs.s === 'dog' ? 90 : 70;
+                        const requiredBlood = (inputs.w * bloodVolConstant * (inputs.tPCV - inputs.pPCV)) / inputs.dPCV;
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p class="text-xl font-bold mt-2 text-emerald-700"><strong>必要血液量:</strong> ${requiredBlood.toFixed(1)} mL</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+必要血液量(mL) = (体重(kg) * 血液量係数 * (目標PCV - 患者PCV)) / 供血動物PCV
+  = (${inputs.w} * ${bloodVolConstant} * (${inputs.tPCV} - ${inputs.pPCV})) / ${inputs.dPCV} = ${requiredBlood.toFixed(1)}
+                            </div>`;
+                        break;
+
+                    case 'cri_gamma':
+                        inputs = {
+                            conc: parseFloat(document.getElementById('cri-g-conc').value),
+                            w: parseFloat(document.getElementById('cri-g-weight').value),
+                            rate: parseFloat(document.getElementById('cri-g-rate').value),
+                            vol: parseFloat(document.getElementById('cri-g-total-vol').value),
+                            dose: parseFloat(document.getElementById('cri-g-dose').value)
+                        };
+                        if (Object.values(inputs).some(isNaN)) throw new Error();
+                        const drugAmountMl = (inputs.dose * inputs.w * inputs.vol * 60) / (inputs.conc * 1000 * inputs.rate);
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p>輸液${inputs.vol}mLに薬剤を <strong class="text-xl text-emerald-700">${drugAmountMl.toFixed(2)} mL</strong> 添加し、<br><strong>${inputs.rate} mL/hr</strong> の流量で投与します。</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+薬剤量(mL) = (投与量(μg/kg/min) * 体重(kg) * 全体量(mL) * 60) / (薬剤濃度(mg/mL) * 1000 * 点滴流量(mL/hr))
+  = (${inputs.dose} * ${inputs.w} * ${inputs.vol} * 60) / (${inputs.conc} * 1000 * ${inputs.rate}) = ${drugAmountMl.toFixed(2)}
+                            </div>`;
+                        break;
+                }
+                resultBox.innerHTML = resultHtml;
+                resultBox.classList.remove('hidden');
+
+                if (id === 'bsa') {
+                    generateBsaTable(inputs.s);
+                }
+
+            } catch (e) {
+                resultBox.classList.add('hidden');
+            }
+        }
+
+        function generateBsaTable(species) {
+            const tableBody = document.getElementById('bsa-table-body');
+            const k = species === 'dog' ? 10.1 : 10.0;
+            const weights = [1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,25,30,35,40,45,50,55,60];
+            let tableHtml = '';
+            for(let i = 0; i < weights.length; i += 3) {
+                tableHtml += '<tr>';
+                for(let j = 0; j < 3; j++) {
+                    const weight = weights[i+j];
+                    if(weight) {
+                        const bsa = k * Math.pow(weight * 1000, 2/3) / 10000;
+                        tableHtml += `<td><strong>${weight}kg</strong></td><td>${bsa.toFixed(3)} m²</td>`;
+                    } else {
+                        tableHtml += '<td></td><td></td>';
+                    }
+                }
+                tableHtml += '</tr>';
+            }
+            tableBody.innerHTML = tableHtml;
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
