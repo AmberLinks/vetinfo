@@ -755,6 +755,26 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                             <p class="text-xs text-gray-600 mt-4">注意: 計算値は理論値です。過輸血を避けるため、患者の状態（特に心疾患や腎疾患の有無）を考慮し、まずは計算量の25-50%を投与して反応を見ることが推奨されます。</p>
                             `;
                         break;
+                    case 'cri_gamma':
+                        const cri_g_conc = parseFloat(document.getElementById('cri-g-conc').value);
+                        const cri_g_weight = parseFloat(document.getElementById('cri-g-weight').value);
+                        const cri_g_rate = parseFloat(document.getElementById('cri-g-rate').value);
+                        const cri_g_total_vol = parseFloat(document.getElementById('cri-g-total-vol').value);
+                        const cri_g_dose = parseFloat(document.getElementById('cri-g-dose').value);
+
+                        if ([cri_g_conc, cri_g_weight, cri_g_rate, cri_g_total_vol, cri_g_dose].some(isNaN) || cri_g_rate <= 0 || cri_g_conc <= 0) throw new Error();
+                        
+                        const drugAmountMl = (cri_g_dose * cri_g_weight * cri_g_total_vol * 60) / (cri_g_conc * 1000 * cri_g_rate);
+
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p>輸液${cri_g_total_vol}mLに薬剤を <strong class="text-xl text-emerald-700">${drugAmountMl.toFixed(2)} mL</strong> 添加し、<br><strong>${cri_g_rate} mL/hr</strong> の流量で投与します。</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+薬剤量(mL) = (投与量(μg/kg/min) * 体重(kg) * 全体量(mL) * 60) / (薬剤濃度(mg/mL) * 1000 * 点滴流量(mL/hr))
+  = (${cri_g_dose} * ${cri_g_weight} * ${cri_g_total_vol} * 60) / (${cri_g_conc} * 1000 * ${cri_g_rate}) = ${drugAmountMl.toFixed(2)}
+                            </div>`;
+                        break;
                     case 'medication_exotic_oral':
                         const med_exo_weight_kg = parseFloat(document.getElementById('med-exo-weight').value) / 1000;
                         const med_exo_dose = parseFloat(document.getElementById('med-exo-dose').value);
