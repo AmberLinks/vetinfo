@@ -355,7 +355,6 @@ function renderCalculator(title, id) {
     if (calcContainer) {
         calcContainer.addEventListener('input', () => calculate(id));
         
-        // --- 標準の計算機 ---
         if (id === 'calorie_dogcat_detailed') {
             document.getElementById('purpose').addEventListener('change', updateCalculatorUI);
             document.getElementById('species').addEventListener('change', updateCalculatorUI);
@@ -397,7 +396,6 @@ function renderCalculator(title, id) {
             });
         }
         
-        // --- 新しい計算機 ---
         if (id === 'oxygen') {
             const methodSelect = document.getElementById('o2_method');
             methodSelect.addEventListener('change', () => updateOxygenUI());
@@ -406,11 +404,10 @@ function renderCalculator(title, id) {
         if (id === 'osmolarity') {
             const rowsInput = document.getElementById('add_rows');
             rowsInput.addEventListener('change', () => buildOsmolarityRows());
-            buildOsmolarityRows(); // 初期表示
+            buildOsmolarityRows(); 
              document.getElementById('base_sol').addEventListener('change', () => calculate(id));
         }
 
-        // 初回計算を実行
         calculate(id);
     }
 }
@@ -469,10 +466,8 @@ function updateOxygenUI() {
     const defaultCoefs = { nasal: 100, mask: 150, hood: 3, hfno: 1.0 };
     coefInput.value = defaultCoefs[method] || '';
 
-    // ケージの体積入力欄の表示/非表示を切り替え
     const isCage = (method === 'hood');
     document.getElementById('o2_cage_vol').parentElement.style.display = isCage ? 'block' : 'none';
-    // 体重入力が不要なケース
     const needsWeight = ['nasal', 'mask', 'hfno'].includes(method);
     document.getElementById('bw_o2').parentElement.style.display = needsWeight ? 'block' : 'none';
     
@@ -497,7 +492,6 @@ function buildOsmolarityRows() {
         `;
         zone.appendChild(div);
     }
-     // 新しく生成された入力フィールドにもイベントリスナーを追加
     zone.querySelectorAll('input').forEach(input => input.addEventListener('input', () => calculate('osmolarity')));
     calculate('osmolarity');
 }
@@ -1038,7 +1032,6 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
         }
 
     } catch (e) {
-        // Hide result box on error (e.g., incomplete input)
         if (resultBox) {
             resultBox.innerHTML = '';
             resultBox.classList.add('hidden');
