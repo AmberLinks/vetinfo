@@ -89,10 +89,10 @@
     <div class="flex h-screen overflow-hidden">
         <nav id="sidebar" class="w-16 md:w-56 bg-gray-800 text-white flex flex-col transition-all duration-300 flex-shrink-0">
             <div class="px-4 py-5 border-b border-gray-700 flex items-center justify-center md:justify-start">
-                <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v11.494m-9-5.747h18"/>
                 </svg>
-                <h1 class="text-xl font-bold ml-3 hidden md:block">Vet Guide</h1>
+                <h1 class="text-xl font-bold ml-3 hidden md:block">Vet Tools</h1>
             </div>
             <ul id="nav-list" class="flex-grow overflow-y-auto">
                 </ul>
@@ -206,7 +206,7 @@
         // --- Rendering Functions ---
         function renderNavigation() {
             navList.innerHTML = '';
-            const majorCategories = { "犬・猫": "🐾", "エキゾチックアニマル": "🐇" };
+            const majorCategories = { "犬・猫": "", "エキゾチックアニマル": "" };
             
             Object.keys(majorCategories).forEach(cat => {
                 const li = document.createElement('li');
