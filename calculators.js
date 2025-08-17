@@ -143,15 +143,211 @@ function renderCalculator(title, id) {
                     </div>
                 </div>`;
             break;
+        
+        // --- NEW CALCULATORS ---
+        case 'fluids':
+            html += `
+                <p class="text-sm text-gray-600">維持輸液量、脱水補正量、および継続的な損失を合算して、1時間あたりの推奨輸液流量を計算します。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="sp_fl" class="block text-sm font-medium text-gray-700">動物種</label>
+                        <select id="sp_fl" class="mt-1 calc-input"><option value="dog">犬</option><option value="cat">猫</option></select>
+                    </div>
+                    <div><label for="bw_fl" class="block text-sm font-medium text-gray-700">体重 (kg)</label>
+                        <input id="bw_fl" type="number" min="0" step="0.01" placeholder="例: 5.2" class="mt-1 calc-input">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div><label for="m_dog" class="block text-sm font-medium text-gray-700">維持式（犬）</label>
+                        <select id="m_dog" class="mt-1 calc-input">
+                            <option value="60">60 mL/kg/日</option>
+                            <option value="met">132 × BW^0.75 mL/日</option>
+                            <option value="lin">30 × BW + 70 mL/日</option>
+                        </select>
+                    </div>
+                    <div><label for="m_cat" class="block text-sm font-medium text-gray-700">維持式（猫）</label>
+                        <select id="m_cat" class="mt-1 calc-input">
+                            <option value="40">40 mL/kg/日</option>
+                            <option value="met">80 × BW^0.75 mL/日</option>
+                            <option value="lin">30 × BW + 70 mL/日</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label for="dehyd" class="block text-sm font-medium text-gray-700">脱水率 (%)</label>
+                        <input id="dehyd" type="number" min="0" max="15" step="0.1" placeholder="例: 8" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="rehyd_hours" class="block text-sm font-medium text-gray-700">補正時間 (h)</label>
+                        <input id="rehyd_hours" type="number" min="1" max="48" step="1" value="24" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="ongoing" class="block text-sm font-medium text-gray-700">継続損失 (mL/h)</label>
+                        <input id="ongoing" type="number" min="0" step="1" value="0" class="mt-1 calc-input">
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">計算根拠: AAHA 2024 Fluid Therapy Guidelines</p>
+            `;
+            break;
+        case 'drip':
+            html += `
+                <p class="text-sm text-gray-600">輸液ポンプの流量(mL/h)と、自然滴下での滴下数(滴/分)を相互に換算します。</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="mode_drip" class="block text-sm font-medium text-gray-700">換算モード</label>
+                        <select id="mode_drip" class="mt-1 calc-input">
+                            <option value="ml2gtt">mL/h → 滴/分</option>
+                            <option value="gtt2ml">滴/分 → mL/h</option>
+                        </select>
+                    </div>
+                    <div><label for="df" class="block text-sm font-medium text-gray-700">滴下係数 (gtt/mL)</label>
+                        <input id="df" type="number" step="1" min="5" value="20" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="mlh" class="block text-sm font-medium text-gray-700">輸液流量 (mL/h)</label>
+                        <input id="mlh" type="number" step="0.1" placeholder="例: 50" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="gttm" class="block text-sm font-medium text-gray-700">滴下数 (滴/分)</label>
+                        <input id="gttm" type="number" step="0.1" placeholder="例: 17" class="mt-1 calc-input">
+                    </div>
+                </div>
+                 <p class="text-xs text-gray-500">計算式: 滴/分 = (mL/h × gtt/mL) ÷ 60</p>
+            `;
+            break;
+        case 'dilution':
+            html += `
+                <p class="text-sm text-gray-600">C1V1 = C2V2 の公式に基づき、原液から目標濃度の溶液を作成するために必要な量を計算します。4つのうち1つの項目を空欄にしてください。</p>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="c1" class="block text-sm font-medium text-gray-700">原液の濃度</label>
+                        <input id="c1" type="number" step="0.0001" class="mt-1 calc-input" placeholder="例: 50">
+                    </div>
+                    <div><label for="v1" class="block text-sm font-medium text-gray-700">原液の量 (mL)</label>
+                        <input id="v1" type="number" step="0.01" class="mt-1 calc-input" placeholder="例: 2">
+                    </div>
+                    <div><label for="c2" class="block text-sm font-medium text-gray-700">目標の濃度</label>
+                        <input id="c2" type="number" step="0.0001" class="mt-1 calc-input" placeholder="例: 5">
+                    </div>
+                     <div><label for="v2" class="block text-sm font-medium text-gray-700">最終的な量 (mL)</label>
+                        <input id="v2" type="number" step="0.01" class="mt-1 calc-input" placeholder="例: 20">
+                    </div>
+                </div>
+            `;
+            break;
+        case 'oxygen':
+            html += `
+                <p class="text-sm text-gray-600">酸素投与の方法に応じて、推奨される酸素流量の目安を計算します。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="o2_method" class="block text-sm font-medium text-gray-700">投与方法</label>
+                        <select id="o2_method" class="mt-1 calc-input">
+                            <option value="nasal">鼻カテーテル/カニュラ (50-100 mL/kg/min)</option>
+                            <option value="mask">マスク (100-200 mL/kg/min)</option>
+                            <option value="hood">フード/ボックス/ケージ (2-5 L/min)</option>
+                            <option value="hfno">高流量鼻カニュラ (HFNO, 0.5-2 L/kg/min)</option>
+                        </select>
+                    </div>
+                    <div><label for="bw_o2" class="block text-sm font-medium text-gray-700">体重 (kg)</label>
+                        <input id="bw_o2" type="number" step="0.01" placeholder="例: 5" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="o2_coef" class="block text-sm font-medium text-gray-700">推奨流量係数</label>
+                        <input id="o2_coef" type="number" step="1" placeholder="自動入力" class="mt-1 calc-input">
+                    </div>
+                    <div><label for="o2_cage_vol" class="block text-sm font-medium text-gray-700">ケージ体積 (L)</label>
+                        <input id="o2_cage_vol" type="number" step="1" placeholder="ケージ使用時" class="mt-1 calc-input">
+                    </div>
+                </div>
+            `;
+            break;
+        case 'electrolytes':
+            html += `
+                <div class="border-b border-gray-200 mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">A. ナトリウム補正</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label for="na_now" class="block text-sm font-medium text-gray-700">現在Na (mEq/L)</label><input id="na_now" type="number" step="0.1" class="mt-1 calc-input"></div>
+                    <div><label for="na_goal" class="block text-sm font-medium text-gray-700">目標Na (mEq/L)</label><input id="na_goal" type="number" step="0.1" class="mt-1 calc-input"></div>
+                    <div><label for="bw_na" class="block text-sm font-medium text-gray-700">体重(kg)</label><input id="bw_na" type="number" step="0.01" class="mt-1 calc-input"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div><label for="tbw_frac" class="block text-sm font-medium text-gray-700">総体水分(TBW)係数</label><input id="tbw_frac" type="number" step="0.05" value="0.6" class="mt-1 calc-input"></div>
+                    <div><label for="na_maxday" class="block text-sm font-medium text-gray-700">1日の安全な補正上限 (mEq/L)</label><input id="na_maxday" type="number" step="1" value="12" class="mt-1 calc-input"></div>
+                </div>
+
+                <div class="border-b border-gray-200 mt-8 mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">B. カリウム補正</h3>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label for="k_now" class="block text-sm font-medium text-gray-700">現在K (mEq/L)</label><input id="k_now" type="number" step="0.1" class="mt-1 calc-input"></div>
+                    <div><label for="bag_vol" class="block text-sm font-medium text-gray-700">輸液バッグ容量 (mL)</label><input id="bag_vol" type="number" step="1" placeholder="例: 500" class="mt-1 calc-input"></div>
+                    <div><label for="k_target" class="block text-sm font-medium text-gray-700">目標K濃度 (mEq/L)</label><input id="k_target" type="number" step="1" placeholder="例: 40" class="mt-1 calc-input"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div><label for="k_stock" class="block text-sm font-medium text-gray-700">添加液(KCl)濃度 (mEq/mL)</label><input id="k_stock" type="number" step="0.01" value="2" class="mt-1 calc-input"></div>
+                    <div><label for="inf_rate" class="block text-sm font-medium text-gray-700">輸液速度 (mL/h)</label><input id="inf_rate" type="number" step="0.1" placeholder="速度チェック用" class="mt-1 calc-input"></div>
+                    <div><label for="bw_k" class="block text-sm font-medium text-gray-700">体重 (kg)</label><input id="bw_k" type="number" step="0.01" placeholder="速度チェック用" class="mt-1 calc-input"></div>
+                </div>
+                 <p class="text-xs text-gray-500 mt-4">注意: Naの過速補正はODS、Kの過剰投与は心毒性のリスクがあります。最大K投与速度 ≤0.5 mEq/kg/h を厳守してください。</p>
+            `;
+            break;
+        case 'osmolarity':
+             html += `
+                <p class="text-sm text-gray-600">基礎輸液に複数の薬剤を混合した際の、最終的な浸透圧を概算します。末梢投与では600 mOsm/L以上で静脈炎のリスクが高まります。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="base_sol" class="block text-sm font-medium text-gray-700">基礎輸液</label>
+                        <select id="base_sol" class="mt-1 calc-input">
+                            <option value="custom">手入力</option>
+                            <option value="308">0.9% NaCl (308 mOsm/L)</option>
+                            <option value="273">乳酸リンゲル LRS (273 mOsm/L)</option>
+                            <option value="294">Plasma-Lyte A (294 mOsm/L)</option>
+                        </select>
+                    </div>
+                    <div><label for="base_osm" class="block text-sm font-medium text-gray-700">基礎輸液の浸透圧 (mOsm/L)</label><input id="base_osm" type="number" step="1" placeholder="手入力時" class="mt-1 calc-input"></div>
+                    <div><label for="base_vol" class="block text-sm font-medium text-gray-700">基礎輸液の体積 (mL)</label><input id="base_vol" type="number" step="1" placeholder="例: 500" class="mt-1 calc-input"></div>
+                    <div><label for="add_rows" class="block text-sm font-medium text-gray-700">追加する薬剤の数</label><input id="add_rows" type="number" step="1" value="2" min="1" max="10" class="mt-1 calc-input"></div>
+                </div>
+                <div id="add_zone" class="mt-4 space-y-4"></div>
+            `;
+            break;
+        case 'weight_loss_ideal':
+            html += `
+                <p class="text-sm text-gray-600">現在の体重とBCS(9段階評価)から理想体重を推定し、減量に必要なカロリーの開始点を計算します。</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label for="sp_wt" class="block text-sm font-medium text-gray-700">動物種</label>
+                        <select id="sp_wt" class="mt-1 calc-input"><option value="dog">犬</option><option value="cat">猫</option></select>
+                    </div>
+                    <div><label for="bw_now" class="block text-sm font-medium text-gray-700">現在体重 (kg)</label><input id="bw_now" type="number" step="0.01" class="mt-1 calc-input"></div>
+                    <div><label for="bcs" class="block text-sm font-medium text-gray-700">BCS (9段階)</label>
+                        <select id="bcs" class="mt-1 calc-input">
+                            <option value="5">5/9 (理想)</option>
+                            <option value="6">6/9 (過体重 +10%)</option>
+                            <option value="7">7/9 (過体重 +20%)</option>
+                            <option value="8">8/9 (過体重 +30%)</option>
+                            <option value="9">9/9 (過体重 +40%)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div><label for="cal_cut" class="block text-sm font-medium text-gray-700">カロリー係数 (減量)</label>
+                        <select id="cal_cut" class="mt-1 calc-input">
+                            <option value="0.8">RER(理想体重)の80% (推奨)</option>
+                            <option value="0.7">RER(理想体重)の70%</option>
+                            <option value="0.6">RER(理想体重)の60% (厳格)</option>
+                        </select>
+                    </div>
+                     <div><label for="rate_w" class="block text-sm font-medium text-gray-700">目標減量速度</label>
+                        <select id="rate_w" class="mt-1 calc-input">
+                            <option value="dog">犬: 1-2%/週</option>
+                            <option value="cat">猫: 0.5-2%/週</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            break;
     }
 
-    html += `<div id="calc-result-${id}" class="calc-result-box hidden"></div></div>`;
+    html += `<div id="calc-result-${id}" class="calc-result-box hidden mt-6"></div></div>`;
     detailContent.innerHTML = html;
 
     // --- イベントリスナーを設定 ---
     const calcContainer = document.getElementById(`calc-${id}`);
     if (calcContainer) {
         calcContainer.addEventListener('input', () => calculate(id));
+        
+        // --- 標準の計算機 ---
         if (id === 'calorie_dogcat_detailed') {
             document.getElementById('purpose').addEventListener('change', updateCalculatorUI);
             document.getElementById('species').addEventListener('change', updateCalculatorUI);
@@ -164,7 +360,6 @@ function renderCalculator(title, id) {
         if (id === 'medication_exotic_water') {
             const weightInput = document.getElementById('wm-fd-weight');
             const percentInput = document.getElementById('wm-fd-intake-percent');
-            
             const updateWaterIntake = () => {
                 const weight = parseFloat(weightInput.value);
                 const percent = parseFloat(percentInput.value);
@@ -176,10 +371,8 @@ function renderCalculator(title, id) {
                 }
                 calculate(id);
             };
-
             weightInput.addEventListener('input', updateWaterIntake);
             percentInput.addEventListener('input', updateWaterIntake);
-            
             document.getElementById('water-med-tabs').addEventListener('click', (e) => {
                 e.preventDefault();
                 const tab = e.target.closest('a');
@@ -195,6 +388,22 @@ function renderCalculator(title, id) {
                 calculate(id);
             });
         }
+        
+        // --- 新しい計算機 ---
+        if (id === 'oxygen') {
+            const methodSelect = document.getElementById('o2_method');
+            methodSelect.addEventListener('change', () => updateOxygenUI());
+            updateOxygenUI();
+        }
+        if (id === 'osmolarity') {
+            const rowsInput = document.getElementById('add_rows');
+            rowsInput.addEventListener('change', () => buildOsmolarityRows());
+            buildOsmolarityRows(); // 初期表示
+             document.getElementById('base_sol').addEventListener('change', () => calculate(id));
+        }
+
+        // 初回計算を実行
+        calculate(id);
     }
 }
 
@@ -244,6 +453,48 @@ function updateTransfusionUI(calculatorId) {
 }
 
 /**
+ * 酸素流量計算ツールのUIを更新します。
+ */
+function updateOxygenUI() {
+    const method = document.getElementById('o2_method').value;
+    const coefInput = document.getElementById('o2_coef');
+    const defaultCoefs = { nasal: 100, mask: 150, hood: 3, hfno: 1.0 };
+    coefInput.value = defaultCoefs[method] || '';
+
+    // ケージの体積入力欄の表示/非表示を切り替え
+    const isCage = (method === 'hood');
+    document.getElementById('o2_cage_vol').parentElement.style.display = isCage ? 'block' : 'none';
+    // 体重入力が不要なケース
+    const needsWeight = ['nasal', 'mask', 'hfno'].includes(method);
+    document.getElementById('bw_o2').parentElement.style.display = needsWeight ? 'block' : 'none';
+    
+    calculate('oxygen');
+}
+
+/**
+ * 浸透圧計算ツール用の薬剤入力フィールドを動的に生成します。
+ */
+function buildOsmolarityRows() {
+    const n = parseInt(document.getElementById('add_rows').value || '0');
+    const zone = document.getElementById('add_zone');
+    zone.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4';
+        div.innerHTML = `
+            <div class="md:col-span-3"><label class="block text-sm font-semibold text-gray-700">薬剤 ${i + 1}</label></div>
+            <div><label for="add_name_${i}" class="block text-sm font-medium text-gray-700">名称 (任意)</label><input id="add_name_${i}" type="text" class="mt-1 calc-input"></div>
+            <div><label for="add_osm_${i}" class="block text-sm font-medium text-gray-700">mOsm/L</label><input id="add_osm_${i}" type="number" step="1" placeholder="例: 500" class="mt-1 calc-input"></div>
+            <div><label for="add_vol_${i}" class="block text-sm font-medium text-gray-700">体積 (mL)</label><input id="add_vol_${i}" type="number" step="0.1" placeholder="例: 10" class="mt-1 calc-input"></div>
+        `;
+        zone.appendChild(div);
+    }
+     // 新しく生成された入力フィールドにもイベントリスナーを追加
+    zone.querySelectorAll('input').forEach(input => input.addEventListener('input', () => calculate('osmolarity')));
+    calculate('osmolarity');
+}
+
+/**
  * 指定されたIDの計算を実行し、結果を表示します。
  * @param {string} id - 計算ツールのユニークID
  */
@@ -251,6 +502,12 @@ function calculate(id) {
     const resultBox = document.getElementById(`calc-result-${id}`);
     if (!resultBox) return;
     let resultHtml = '';
+    
+    const rnd = (x, p = 2) => {
+        if (isNaN(x) || !isFinite(x)) return '---';
+        const f = Math.pow(10, p);
+        return Math.round(x * f) / f;
+    };
     
     try {
          switch(id) {
@@ -471,7 +728,7 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                     const wm_fd_volume_L = parseFloat(document.getElementById('wm-fd-volume').value) / 1000;
                     const wm_fd_days = parseInt(document.getElementById('wm-fd-days').value);
                     
-                    if ([wm_fd_weight_kg, wm_fd_dose, wm_fd_intake_L, wm_fd_strength, wm_fd_volume_L, wm_fd_days].some(isNaN) || wm_fd_weight_kg <= 0 || wm_fd_intake_L <= 0 || wm_fd_strength <= 0 || wm_fd_volume_L <= 0 || wm_fd_days <= 0) throw new Error();
+                    if ([wm_fd_weight_kg, wm_fd_dose, wm_fd_intake_L, wm_fd_strength, wm_fd_volume_L, wm_fd_days].some(v => isNaN(v) || v <= 0)) throw new Error();
 
                     const dailyDoseMg = wm_fd_weight_kg * wm_fd_dose;
                     const targetConc = dailyDoseMg / wm_fd_intake_L;
@@ -498,7 +755,7 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                     const wm_fc_volume_L = parseFloat(document.getElementById('wm-fc-volume').value) / 1000;
                     const wm_fc_days = parseInt(document.getElementById('wm-fc-days').value);
 
-                    if ([wm_fc_conc, wm_fc_strength, wm_fc_volume_L, wm_fc_days].some(isNaN) || wm_fc_conc <= 0 || wm_fc_strength <= 0 || wm_fc_volume_L <= 0 || wm_fc_days <= 0) throw new Error();
+                    if ([wm_fc_conc, wm_fc_strength, wm_fc_volume_L, wm_fc_days].some(v => isNaN(v) || v <= 0)) throw new Error();
                     
                     const drugPerBottle_fc = wm_fc_conc * wm_fc_volume_L;
                     const totalDrug_fc = drugPerBottle_fc * wm_fc_days;
@@ -515,6 +772,246 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                         </div>`;
                 }
                 break;
+            
+            // --- NEW CALCULATORS LOGIC ---
+            case 'fluids':
+                const sp = document.getElementById('sp_fl').value;
+                const bw = parseFloat(document.getElementById('bw_fl').value);
+                const dehyd = parseFloat(document.getElementById('dehyd').value || '0') / 100;
+                const hrs = parseFloat(document.getElementById('rehyd_hours').value || '24');
+                const ongoing = parseFloat(document.getElementById('ongoing').value || '0');
+                if (isNaN(bw) || bw <= 0) throw new Error();
+
+                let m;
+                if (sp === 'dog') {
+                    const mode = document.getElementById('m_dog').value;
+                    if (mode === '60') m = 60 * bw;
+                    else if (mode === 'met') m = 132 * Math.pow(bw, 0.75);
+                    else m = 30 * bw + 70;
+                } else {
+                    const mode = document.getElementById('m_cat').value;
+                    if (mode === '40') m = 40 * bw;
+                    else if (mode === 'met') m = 80 * Math.pow(bw, 0.75);
+                    else m = 30 * bw + 70;
+                }
+                const maint_mL_day = m;
+                const maint_mL_h = maint_mL_day / 24;
+                const deficit_mL = bw * dehyd * 1000;
+                const rehyd_mL_h = deficit_mL / hrs;
+                const total_mL_h = maint_mL_h + rehyd_mL_h + ongoing;
+                
+                resultHtml = `
+                    <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                    <p class="text-2xl font-bold text-emerald-700">${rnd(total_mL_h, 1)} mL/h</p>
+                    <h5 class="font-semibold mt-4 mb-1">内訳</h5>
+                    <div class="calc-formula">
+<p><strong>維持輸液量:</strong> ${rnd(maint_mL_h, 1)} mL/h (${rnd(maint_mL_day, 0)} mL/日)</p>
+<p><strong>脱水補正量:</strong> ${rnd(rehyd_mL_h, 1)} mL/h (総量: ${rnd(deficit_mL, 0)} mL を ${hrs}時間で補正)</p>
+<p><strong>継続損失量:</strong> ${rnd(ongoing, 1)} mL/h</p>
+<hr class="my-2 border-gray-400">
+<p><strong>合計流量:</strong> ${rnd(total_mL_h, 1)} mL/h</p>
+                    </div>
+                `;
+                break;
+            
+            case 'drip':
+                const mode = document.getElementById('mode_drip').value;
+                const df = parseFloat(document.getElementById('df').value);
+                const mlh = parseFloat(document.getElementById('mlh').value);
+                const gttm = parseFloat(document.getElementById('gttm').value);
+                if (isNaN(df) || df <= 0) throw new Error();
+
+                if (mode === 'ml2gtt') {
+                    if (isNaN(mlh) || mlh < 0) throw new Error();
+                    const drops = (mlh * df) / 60;
+                    resultHtml = `<h4 class="font-semibold text-lg mb-2">換算結果</h4>
+                                <p class="text-xl font-bold mt-2 text-emerald-700">${rnd(drops, 1)} 滴/分</p>
+                                <p class="text-sm text-gray-600 mt-1">(${rnd(60 / drops, 1)} 秒に1滴)</p>`;
+                } else {
+                    if (isNaN(gttm) || gttm < 0) throw new Error();
+                    const flow = (gttm * 60) / df;
+                    resultHtml = `<h4 class="font-semibold text-lg mb-2">換算結果</h4>
+                                <p class="text-xl font-bold mt-2 text-emerald-700">${rnd(flow, 1)} mL/h</p>`;
+                }
+                break;
+            case 'dilution':
+                 const c1 = parseFloat(document.getElementById('c1').value);
+                 const v1 = parseFloat(document.getElementById('v1').value);
+                 const c2 = parseFloat(document.getElementById('c2').value);
+                 const v2 = parseFloat(document.getElementById('v2').value);
+                 
+                 const inputs = [!isNaN(c1), !isNaN(v1), !isNaN(c2), !isNaN(v2)];
+                 const emptyCount = inputs.filter(i => !i).length;
+
+                 if (emptyCount !== 1) {
+                    resultHtml = `<p class="text-red-600">4つの項目のうち、1つだけを空欄にして計算してください。</p>`;
+                 } else if (isNaN(v1)) { // V1を計算
+                    const needV1 = (c2 * v2) / c1;
+                    resultHtml = `<p><strong>必要な原液量 (V1):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(needV1, 3)} mL</span></p>
+                                <p><strong>加える希釈液の量:</strong> ${rnd(v2 - needV1, 3)} mL</p>`;
+                 } else if (isNaN(v2)) { // V2を計算
+                    const needV2 = (c1 * v1) / c2;
+                    resultHtml = `<p><strong>最終的な溶液量 (V2):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(needV2, 3)} mL</span></p>
+                                <p><strong>加える希釈液の量:</strong> ${rnd(needV2 - v1, 3)} mL</p>`;
+                 } else if (isNaN(c1)) { // C1を計算
+                    const needC1 = (c2 * v2) / v1;
+                    resultHtml = `<p><strong>必要な原液濃度 (C1):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(needC1, 3)}</span></p>`;
+                 } else if (isNaN(c2)) { // C2を計算
+                    const needC2 = (c1 * v1) / v2;
+                    resultHtml = `<p><strong>最終的な濃度 (C2):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(needC2, 3)}</span></p>`;
+                 }
+                break;
+            case 'oxygen':
+                const o2_method = document.getElementById('o2_method').value;
+                const o2_bw = parseFloat(document.getElementById('bw_o2').value);
+                const o2_coef = parseFloat(document.getElementById('o2_coef').value);
+                const o2_cage_vol = parseFloat(document.getElementById('o2_cage_vol').value);
+                if (isNaN(o2_coef)) throw new Error();
+
+                let flowText = '';
+                if (['nasal', 'mask'].includes(o2_method)) {
+                    if (isNaN(o2_bw) || o2_bw <= 0) throw new Error();
+                    const mlmin = o2_bw * o2_coef;
+                    flowText = `<p>推奨流量: <span class="text-xl font-bold text-emerald-700">${rnd(mlmin / 1000, 2)} L/min</span> (${rnd(mlmin, 0)} mL/min)</p>`;
+                } else if (o2_method === 'hfno') {
+                     if (isNaN(o2_bw) || o2_bw <= 0) throw new Error();
+                    const lmin = o2_bw * o2_coef;
+                    flowText = `<p>推奨流量: <span class="text-xl font-bold text-emerald-700">${rnd(lmin, 2)} L/min</span></p>`;
+                } else { // hood
+                    flowText = `<p>推奨流量: <span class="text-xl font-bold text-emerald-700">${rnd(o2_coef, 1)} L/min</span></p>
+                                <p class="text-sm text-gray-600">（飽和後は0.5-1 L/minに低減を検討）</p>`;
+                    if (!isNaN(o2_cage_vol) && o2_cage_vol > 0) {
+                        const turnovers = o2_coef * 60 / o2_cage_vol;
+                        flowText += `<p class="text-sm text-gray-500 mt-2">ケージ体積 ${o2_cage_vol}L の場合、1時間あたり約 ${rnd(turnovers,1)}回 のガス交換に相当します。</p>`;
+                    }
+                }
+                resultHtml = flowText;
+                break;
+            case 'electrolytes':
+                // Na
+                const na_now = parseFloat(document.getElementById('na_now').value);
+                const na_goal = parseFloat(document.getElementById('na_goal').value);
+                const bw_na = parseFloat(document.getElementById('bw_na').value);
+                const tbw_frac = parseFloat(document.getElementById('tbw_frac').value);
+                const na_maxday = parseFloat(document.getElementById('na_maxday').value);
+                
+                let naHtml = '<h4>A. Na補正 結果</h4>';
+                if (![na_now, na_goal, bw_na, tbw_frac, na_maxday].some(isNaN)) {
+                    const TBW = bw_na * tbw_frac;
+                    const delta = na_goal - na_now;
+                    const deficit_mmol = delta * TBW;
+                    const cappedGoal = (Math.abs(delta) > na_maxday) ? na_now + Math.sign(delta) * na_maxday : na_goal;
+                    const cappedDef = (cappedGoal - na_now) * TBW;
+
+                    naHtml += `<div class="calc-formula space-y-2">
+                                <p><strong>Na不足量(目標値まで):</strong> ${rnd(deficit_mmol, 1)} mEq</p>`;
+                    if (Math.abs(delta) > na_maxday) {
+                        naHtml += `<p class="text-yellow-700"><strong>⚠ 1日の安全な補正量(～${na_maxday}mEq/L)を考慮した目標Na:</strong> ${rnd(cappedGoal, 1)} mEq/L</p>
+                                   <p><strong>1日目に補うNa量:</strong> ${rnd(cappedDef, 1)} mEq</p>`;
+                    }
+                    if (na_now > na_goal) { // 高Na症の場合の自由水欠乏
+                        const freeWater = ((na_now/na_goal)-1)*TBW;
+                        naHtml += `<p><strong>自由水欠乏量(高Na症):</strong> ${rnd(freeWater, 2)} L</p>`;
+                    }
+                     naHtml += `<p class="text-xs text-gray-500 pt-2 border-t mt-2">参考: 0.9%食塩水(154mEq/L)を1L投与した場合のNa変化予測 ≈ ${rnd((154 - na_now) / (TBW + 1), 2)} mEq/L</p>
+                                </div>`;
+                }
+                
+                // K
+                const k_now = parseFloat(document.getElementById('k_now').value);
+                const bag_vol = parseFloat(document.getElementById('bag_vol').value);
+                const k_target = parseFloat(document.getElementById('k_target').value);
+                const k_stock = parseFloat(document.getElementById('k_stock').value);
+                const inf_rate = parseFloat(document.getElementById('inf_rate').value);
+                const bw_k = parseFloat(document.getElementById('bw_k').value);
+
+                let kHtml = '<h4 class="mt-4">B. K補正 結果</h4>';
+                 if (![bag_vol, k_target, k_stock].some(isNaN)) {
+                    const need_mEq = (k_target * bag_vol) / 1000;
+                    const add_mL = need_mEq / k_stock;
+                    kHtml += `<div class="calc-formula space-y-2">
+                                <p><strong>バッグ(${bag_vol}mL)に追加するKCl量:</strong> <strong class="text-emerald-700 text-lg">${rnd(add_mL, 2)} mL</strong> (${rnd(need_mEq, 1)} mEq)</p>`;
+                    if (!isNaN(inf_rate) && !isNaN(bw_k) && inf_rate > 0 && bw_k > 0) {
+                        const bag_hr = bag_vol / inf_rate;
+                        const per_h_mEq = need_mEq / bag_hr;
+                        const perkg = per_h_mEq / bw_k;
+                        let speedCheckHtml = `<p><strong>K投与速度:</strong> ${rnd(perkg, 3)} mEq/kg/h</p>`;
+                        if (perkg > 0.5) {
+                            speedCheckHtml += `<p class="text-red-600 font-bold">⚠ 危険: 最大推奨速度(0.5mEq/kg/h)を超えています。</p>`;
+                        } else {
+                             speedCheckHtml += `<p class="text-green-600">✔ 安全: 最大推奨速度内です。</p>`;
+                        }
+                        kHtml += `<div class="pt-2 border-t mt-2">${speedCheckHtml}</div>`;
+                    }
+                    kHtml += `</div>`;
+                 }
+                resultHtml = naHtml + kHtml;
+                break;
+             case 'osmolarity':
+                const baseSel = document.getElementById('base_sol').value;
+                let baseOsm = baseSel === 'custom' ? parseFloat(document.getElementById('base_osm').value) : parseFloat(baseSel);
+                const baseVol = parseFloat(document.getElementById('base_vol').value);
+                
+                if (isNaN(baseOsm) || isNaN(baseVol) || baseVol <= 0) throw new Error();
+
+                let totalmOsm = baseOsm * (baseVol / 1000);
+                let totalVol = baseVol / 1000;
+                let formulaHtml = `<p>基礎輸液: ${baseOsm} mOsm/L × ${rnd(baseVol / 1000, 3)} L = ${rnd(totalmOsm, 1)} mOsm</p>`;
+
+                let i = 0;
+                while (true) {
+                    const osmEl = document.getElementById(`add_osm_${i}`);
+                    const volEl = document.getElementById(`add_vol_${i}`);
+                    if (!osmEl || !volEl) break;
+
+                    const osm = parseFloat(osmEl.value);
+                    const vol = parseFloat(volEl.value);
+                    if (!isNaN(osm) && !isNaN(vol) && vol > 0) {
+                        const name = document.getElementById(`add_name_${i}`).value || `薬剤${i + 1}`;
+                        const current_mOsm = osm * (vol / 1000);
+                        totalmOsm += current_mOsm;
+                        totalVol += (vol / 1000);
+                        formulaHtml += `<p>${name}: ${osm} mOsm/L × ${rnd(vol / 1000, 3)} L = ${rnd(current_mOsm, 1)} mOsm</p>`;
+                    }
+                    i++;
+                }
+
+                const finalOsm = totalmOsm / totalVol;
+                let statusHtml = '';
+                if (finalOsm >= 600) statusHtml = `<p class="font-bold text-red-600">⚠ 高浸透圧: 末梢投与は静脈障害リスク。中心静脈路を検討してください。</p>`;
+                else if (finalOsm >= 500) statusHtml = `<p class="font-bold text-yellow-700">⚠ 注意: 500-600 mOsm/Lは血管径や投与部位に注意が必要です。</p>`;
+                else statusHtml = `<p class="font-bold text-green-600">✔ 500 mOsm/L未満です。</p>`;
+
+                resultHtml = `<h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                              <p>最終的な浸透圧 (概算): <strong class="text-xl text-emerald-700">${rnd(finalOsm, 0)} mOsm/L</strong></p>
+                              ${statusHtml}
+                              <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                              <div class="calc-formula">${formulaHtml}
+                              <hr class="my-2 border-gray-400">
+                              <p><strong>合計:</strong> ${rnd(totalmOsm, 1)} mOsm / ${rnd(totalVol, 3)} L</p>
+                              </div>`;
+                break;
+            case 'weight_loss_ideal':
+                const sp_wt = document.getElementById('sp_wt').value;
+                const bw_now = parseFloat(document.getElementById('bw_now').value);
+                const bcs = parseInt(document.getElementById('bcs').value);
+                const cut = parseFloat(document.getElementById('cal_cut').value);
+                 if (isNaN(bw_now) || bw_now <= 0) throw new Error();
+
+                const overMap = {5:0, 6:0.10, 7:0.20, 8:0.30, 9:0.40};
+                const over = overMap[bcs] || 0;
+                const ideal = bw_now / (1 + over);
+                const RER = 70 * Math.pow(ideal, 0.75);
+                const kcal = RER * cut;
+
+                resultHtml = `<h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                              <div class="space-y-2">
+                                <p><strong>推定理想体重:</strong> <span class="text-lg font-bold text-emerald-700">${rnd(ideal, 2)} kg</span></p>
+                                <p><strong>RER (at 理想体重):</strong> ${rnd(RER, 0)} kcal/日</p>
+                                <p><strong>減量用カロリー (開始目安):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(kcal, 0)} kcal/日</span> (RERの${cut*100}%)</p>
+                              </div>
+                              <p class="text-xs text-gray-600 mt-4">注意: これはあくまで開始点です。定期的に体重とBCSを評価し、給与量を10-20%ずつ調整してください。特に猫の急激な減量は肝リピドーシスのリスクがあるため注意が必要です。</p>`;
+                break;
         }
         resultBox.innerHTML = resultHtml;
         resultBox.classList.remove('hidden');
@@ -524,7 +1021,11 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
         }
 
     } catch (e) {
-        resultBox.classList.add('hidden');
+        // Hide result box on error (e.g., incomplete input)
+        if (resultBox) {
+            resultBox.innerHTML = '';
+            resultBox.classList.add('hidden');
+        }
     }
 }
 
