@@ -254,7 +254,15 @@ function renderCalculator(title, id) {
             break;
         case 'electrolytes':
             html += `
-                <div class="border-b border-gray-200 mb-4">
+                <div class="border-b border-gray-200 mb-4 pb-2">
+                    <h3 class="text-xl font-semibold text-gray-800">基礎輸液情報</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="base_na_conc" class="block text-sm font-medium text-gray-700">基礎輸液のNa濃度 (mEq/L)</label><input id="base_na_conc" type="number" step="1" placeholder="例: 130 (乳酸リンゲル)" class="mt-1 calc-input"></div>
+                    <div><label for="base_k_conc" class="block text-sm font-medium text-gray-700">基礎輸液のK濃度 (mEq/L)</label><input id="base_k_conc" type="number" step="1" placeholder="例: 4 (乳酸リンゲル)" class="mt-1 calc-input"></div>
+                </div>
+
+                <div class="border-b border-gray-200 mt-6 mb-4 pb-2">
                     <h3 class="text-xl font-semibold text-gray-800">A. ナトリウム補正</h3>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -267,7 +275,7 @@ function renderCalculator(title, id) {
                     <div><label for="na_maxday" class="block text-sm font-medium text-gray-700">1日の安全な補正上限 (mEq/L)</label><input id="na_maxday" type="number" step="1" value="12" class="mt-1 calc-input"></div>
                 </div>
 
-                <div class="border-b border-gray-200 mt-8 mb-4">
+                <div class="border-b border-gray-200 mt-8 mb-4 pb-2">
                     <h3 class="text-xl font-semibold text-gray-800">B. カリウム補正</h3>
                 </div>
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -773,7 +781,6 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                 }
                 break;
             
-            // --- NEW CALCULATORS LOGIC ---
             case 'fluids':
                 const sp = document.getElementById('sp_fl').value;
                 const bw = parseFloat(document.getElementById('bw_fl').value);
@@ -815,13 +822,13 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                 break;
             
             case 'drip':
-                const mode = document.getElementById('mode_drip').value;
+                const mode_drip = document.getElementById('mode_drip').value;
                 const df = parseFloat(document.getElementById('df').value);
                 const mlh = parseFloat(document.getElementById('mlh').value);
                 const gttm = parseFloat(document.getElementById('gttm').value);
                 if (isNaN(df) || df <= 0) throw new Error();
 
-                if (mode === 'ml2gtt') {
+                if (mode_drip === 'ml2gtt') {
                     if (isNaN(mlh) || mlh < 0) throw new Error();
                     const drops = (mlh * df) / 60;
                     resultHtml = `<h4 class="font-semibold text-lg mb-2">換算結果</h4>
@@ -888,6 +895,9 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                 resultHtml = flowText;
                 break;
             case 'electrolytes':
+                const base_na_conc = parseFloat(document.getElementById('base_na_conc').value) || 0;
+                const base_k_conc = parseFloat(document.getElementById('base_k_conc').value) || 0;
+
                 // Na
                 const na_now = parseFloat(document.getElementById('na_now').value);
                 const na_goal = parseFloat(document.getElementById('na_goal').value);
@@ -913,7 +923,7 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                         const freeWater = ((na_now/na_goal)-1)*TBW;
                         naHtml += `<p><strong>自由水欠乏量(高Na症):</strong> ${rnd(freeWater, 2)} L</p>`;
                     }
-                     naHtml += `<p class="text-xs text-gray-500 pt-2 border-t mt-2">参考: 0.9%食塩水(154mEq/L)を1L投与した場合のNa変化予測 ≈ ${rnd((154 - na_now) / (TBW + 1), 2)} mEq/L</p>
+                     naHtml += `<p class="text-xs text-gray-500 pt-2 border-t mt-2">参考: 基礎輸液(${base_na_conc}mEq/L)を1L投与した場合のNa変化予測 ≈ ${rnd((base_na_conc - na_now) / (TBW + 1), 2)} mEq/L</p>
                                 </div>`;
                 }
                 
@@ -927,14 +937,21 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
 
                 let kHtml = '<h4 class="mt-4">B. K補正 結果</h4>';
                  if (![bag_vol, k_target, k_stock].some(isNaN)) {
-                    const need_mEq = (k_target * bag_vol) / 1000;
-                    const add_mL = need_mEq / k_stock;
+                    const bag_vol_L = bag_vol / 1000;
+                    const total_k_needed = k_target * bag_vol_L;
+                    const existing_k = base_k_conc * bag_vol_L;
+                    const k_to_add = total_k_needed - existing_k;
+
+                    const add_mL = k_to_add / k_stock;
                     kHtml += `<div class="calc-formula space-y-2">
-                                <p><strong>バッグ(${bag_vol}mL)に追加するKCl量:</strong> <strong class="text-emerald-700 text-lg">${rnd(add_mL, 2)} mL</strong> (${rnd(need_mEq, 1)} mEq)</p>`;
+                                <p><strong>バッグ(${bag_vol}mL)に追加するKCl量:</strong> <strong class="text-emerald-700 text-lg">${rnd(add_mL, 2)} mL</strong> (${rnd(k_to_add, 1)} mEq)</p>
+                                <p class="text-xs text-gray-500">(目標総量 ${rnd(total_k_needed,1)}mEq - 基礎輸液分 ${rnd(existing_k,1)}mEq)</p>
+                                `;
                     if (!isNaN(inf_rate) && !isNaN(bw_k) && inf_rate > 0 && bw_k > 0) {
-                        const bag_hr = bag_vol / inf_rate;
-                        const per_h_mEq = need_mEq / bag_hr;
+                        const total_mEq_in_bag = k_target * bag_vol_L;
+                        const per_h_mEq = (total_mEq_in_bag / bag_vol) * inf_rate;
                         const perkg = per_h_mEq / bw_k;
+
                         let speedCheckHtml = `<p><strong>K投与速度:</strong> ${rnd(perkg, 3)} mEq/kg/h</p>`;
                         if (perkg > 0.5) {
                             speedCheckHtml += `<p class="text-red-600 font-bold">⚠ 危険: 最大推奨速度(0.5mEq/kg/h)を超えています。</p>`;
