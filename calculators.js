@@ -144,7 +144,6 @@ function renderCalculator(title, id) {
                 </div>`;
             break;
         
-        // --- NEW CALCULATORS ---
         case 'fluids':
             html += `
                 <p class="text-sm text-gray-600">維持輸液量、脱水補正量、および継続的な損失を合算して、1時間あたりの推奨輸液流量を計算します。</p>
@@ -343,6 +342,52 @@ function renderCalculator(title, id) {
                         </select>
                     </div>
                 </div>
+            `;
+            break;
+        case 'plasma_osmolarity':
+            html += `
+                <p class="text-sm text-gray-600">血漿浸透圧の推定値を計算します。犬の基準値は約 290-310 mOsm/kg、猫は約 300-330 mOsm/kg です。</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="osm_na" class="block text-sm font-medium text-gray-700">Na (mEq/L)</label><input id="osm_na" type="number" step="0.1" class="mt-1 calc-input" placeholder="例: 145"></div>
+                    <div><label for="osm_k" class="block text-sm font-medium text-gray-700">K (mEq/L)</label><input id="osm_k" type="number" step="0.1" class="mt-1 calc-input" placeholder="例: 4.0"></div>
+                    <div><label for="osm_bun" class="block text-sm font-medium text-gray-700">BUN (mg/dL)</label><input id="osm_bun" type="number" step="1" class="mt-1 calc-input" placeholder="例: 20"></div>
+                    <div><label for="osm_glu" class="block text-sm font-medium text-gray-700">Glucose (mg/dL)</label><input id="osm_glu" type="number" step="1" class="mt-1 calc-input" placeholder="例: 100"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">計算式: 2 * (Na + K) + (BUN / 2.8) + (Glucose / 18)</p>
+            `;
+            break;
+        case 'ferret_insulinoma':
+            html += `
+                <p class="text-sm text-gray-600">低血糖症状を示すフェレットのインスリノーマを疑う際の補助的な診断ツールです。確定診断は病理組織検査で行う必要があります。</p>
+                <div class="border-b border-gray-200 mb-4 pb-2">
+                    <h3 class="text-xl font-semibold text-gray-800">1. 低血糖の確認</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div><label for="ferret_glu" class="block text-sm font-medium text-gray-700">血糖値 (mg/dL)</label><input id="ferret_glu" type="number" step="1" class="mt-1 calc-input" placeholder="例: 50"></div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700">測定方法</label>
+                        <p class="text-sm text-gray-800 mt-2">検査室法(ヘキソキナーゼ法)を推奨</p>
+                        <p class="text-xs text-gray-500">(人用グルコメータは過小評価のリスクあり - Di Girolamo N, 2016)</p>
+                     </div>
+                </div>
+
+                <div class="border-b border-gray-200 mt-6 mb-4 pb-2">
+                    <h3 class="text-xl font-semibold text-gray-800">2. インスリン濃度の評価</h3>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="ferret_ins" class="block text-sm font-medium text-gray-700">インスリン濃度 (μU/mL)</label><input id="ferret_ins" type="number" step="0.1" class="mt-1 calc-input" placeholder="例: 25"></div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">基準値 (参考)</label>
+                        <p class="text-sm text-gray-800 mt-2">約 5–35 μU/mL</p>
+                        <p class="text-xs text-gray-500">(Merck Vet Manual, Johnson D, 2011)</p>
+                    </div>
+                </div>
+                 <p class="text-xs text-gray-500 mt-2"><strong>重要:</strong> 血糖値とインスリンは同時採血した検体で評価してください。</p>
+                
+                <div class="border-b border-gray-200 mt-6 mb-4 pb-2">
+                    <h3 class="text-xl font-semibold text-gray-800">3. AIGR (修正インスリン/グルコース比) - 補助的指標</h3>
+                </div>
+                 <p class="text-sm text-red-600 bg-red-50 p-3 rounded-md"><strong>注意:</strong> AIGRはフェレットでの有用性が確立されておらず、偽陽性も報告されています。診断は低血糖と、その状況下で不適切に正常～高値を示すインスリン値を主軸に判断してください (Johnson D, 2011)。</p>
             `;
             break;
     }
@@ -1022,6 +1067,71 @@ BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
                                 <p><strong>減量用カロリー (開始目安):</strong> <span class="text-xl font-bold text-emerald-700">${rnd(kcal, 0)} kcal/日</span> (RERの${cut*100}%)</p>
                               </div>
                               <p class="text-xs text-gray-600 mt-4">注意: これはあくまで開始点です。定期的に体重とBCSを評価し、給与量を10-20%ずつ調整してください。特に猫の急激な減量は肝リピドーシスのリスクがあるため注意が必要です。</p>`;
+                break;
+            case 'plasma_osmolarity':
+                const osm_na = parseFloat(document.getElementById('osm_na').value);
+                const osm_k = parseFloat(document.getElementById('osm_k').value);
+                const osm_bun = parseFloat(document.getElementById('osm_bun').value);
+                const osm_glu = parseFloat(document.getElementById('osm_glu').value);
+                if ([osm_na, osm_k, osm_bun, osm_glu].some(isNaN)) throw new Error();
+
+                const osmolarity = 2 * (osm_na + osm_k) + (osm_bun / 2.8) + (osm_glu / 18);
+                resultHtml = `
+                    <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                    <p><strong>計算血漿浸透圧:</strong> <span class="font-bold text-emerald-700 text-xl">${rnd(osmolarity, 1)} mOsm/kg</span></p>
+                    <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                    <div class="calc-formula">
+2 * (${osm_na} + ${osm_k}) + (${osm_bun} / 2.8) + (${osm_glu} / 18) = ${rnd(osmolarity, 1)}
+                    </div>`;
+                break;
+
+            case 'ferret_insulinoma':
+                const glu = parseFloat(document.getElementById('ferret_glu').value);
+                const ins = parseFloat(document.getElementById('ferret_ins').value);
+                
+                let interpretationHtml = '';
+                
+                // 1. 血糖値の評価
+                if (!isNaN(glu)) {
+                    interpretationHtml += `<h4 class="font-semibold text-lg mb-2">1. 血糖値の評価</h4>`;
+                    if (glu < 60) {
+                        interpretationHtml += `<p class="text-red-600 font-bold">✔ 60 mg/dL未満: 低血糖が強く示唆されます。</p>`;
+                    } else if (glu < 70) {
+                        interpretationHtml += `<p class="text-yellow-700 font-bold">✔ 70 mg/dL未満: 低血糖と判断されます。</p>`;
+                    } else {
+                        interpretationHtml += `<p>血糖値は正常範囲内です。</p>`;
+                    }
+                    interpretationHtml += `<p class="text-xs text-gray-500">基準: < 60-70 mg/dLで低血糖と判断 (Di Girolamo N, 2016)</p>`;
+                }
+
+                // 2. インスリン濃度の評価
+                if (!isNaN(glu) && !isNaN(ins)) {
+                    interpretationHtml += `<h4 class="font-semibold text-lg mt-4 mb-2">2. インスリン濃度の評価 (低血糖との関連)</h4>`;
+                     if (glu < 70 && (ins >= 5 && ins <= 35)) {
+                        interpretationHtml += `<p class="text-red-600 font-bold">✔ 不適切に正常: 低血糖にも関わらずインスリン分泌が抑制されていません。インスリノーマを強く支持します。</p>`;
+                    } else if (glu < 70 && ins > 35) {
+                         interpretationHtml += `<p class="text-red-600 font-bold">✔ 不適切に高値: 低血糖と高インスリン血症が同時に存在し、インスリノーマを極めて強く支持します。</p>`;
+                    } else {
+                         interpretationHtml += `<p>現時点ではインスリンの不適切な分泌は明確ではありません。</p>`;
+                    }
+                     interpretationHtml += `<p class="text-xs text-gray-500">基準: 低血糖時にインスリンが正常～高値(約5-35 μU/mL)の場合に強く支持 (Merck Vet Manual, Johnson D, 2011)</p>`;
+                }
+
+                // 3. AIGR
+                if (!isNaN(glu) && !isNaN(ins)) {
+                    interpretationHtml += `<h4 class="font-semibold text-lg mt-4 mb-2">3. AIGR (補助指標)</h4>`;
+                    const aigr_us = (ins * 100) / (glu - 30);
+                    
+                    interpretationHtml += `
+                        <p><strong>AIGR (米国単位):</strong> <span class="font-bold text-emerald-700">${rnd(aigr_us, 1)}</span></p>
+                        <div class="calc-formula text-sm">
+[${ins} (μU/mL) × 100] / [${glu} (mg/dL) − 30] = ${rnd(aigr_us, 1)}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">犬では > 30 でインスリノーマ支持とされますが、フェレットでの基準は不明確です (Thompson JC et al.)</p>
+                    `;
+                }
+
+                resultHtml = interpretationHtml;
                 break;
         }
         resultBox.innerHTML = resultHtml;
