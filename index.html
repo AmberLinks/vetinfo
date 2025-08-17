@@ -510,7 +510,8 @@
                             <div id="tab-content-from_dose" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label for="wm-fd-weight" class="block text-sm font-medium text-gray-700">体重 (g)</label><input type="number" id="wm-fd-weight" class="mt-1 calc-input" placeholder="例: 40"></div>
                                 <div><label for="wm-fd-dose" class="block text-sm font-medium text-gray-700">投与量 (mg/kg/日)</label><input type="number" id="wm-fd-dose" class="mt-1 calc-input" placeholder="例: 1"></div>
-                                <div><label for="wm-fd-intake" class="block text-sm font-medium text-gray-700">1日の飲水量 (mL)</label><input type="number" id="wm-fd-intake" class="mt-1 calc-input" placeholder="例: 4"></div>
+                                <div><label for="wm-fd-intake-percent" class="block text-sm font-medium text-gray-700">飲水量 (体重の %)</label><input type="number" id="wm-fd-intake-percent" class="mt-1 calc-input" value="10"></div>
+                                <div><label for="wm-fd-intake" class="block text-sm font-medium text-gray-700">1日の飲水量 (mL)</label><input type="number" id="wm-fd-intake" class="mt-1 calc-input bg-gray-100" placeholder="自動計算" readonly></div>
                                 <div><label for="wm-fd-strength" class="block text-sm font-medium text-gray-700">薬剤の含有量 (mg/錠 or g)</label><input type="number" id="wm-fd-strength" class="mt-1 calc-input" placeholder="例: 10"></div>
                                 <div><label for="wm-fd-volume" class="block text-sm font-medium text-gray-700">1包を溶解する水の量 (mL)</label><input type="number" id="wm-fd-volume" class="mt-1 calc-input" placeholder="例: 25"></div>
                                 <div><label for="wm-fd-days" class="block text-sm font-medium text-gray-700">投与日数 (日)</label><input type="number" id="wm-fd-days" class="mt-1 calc-input" placeholder="例: 10"></div>
@@ -541,6 +542,24 @@
                     updateTransfusionUI(id);
                 }
                 if (id === 'medication_exotic_water') {
+                    const weightInput = document.getElementById('wm-fd-weight');
+                    const percentInput = document.getElementById('wm-fd-intake-percent');
+                    
+                    const updateWaterIntake = () => {
+                        const weight = parseFloat(weightInput.value);
+                        const percent = parseFloat(percentInput.value);
+                        const intakeInput = document.getElementById('wm-fd-intake');
+                        if (!isNaN(weight) && !isNaN(percent)) {
+                            intakeInput.value = (weight * (percent / 100)).toFixed(2);
+                        } else {
+                            intakeInput.value = '';
+                        }
+                        calculate(id);
+                    };
+
+                    weightInput.addEventListener('input', updateWaterIntake);
+                    percentInput.addEventListener('input', updateWaterIntake);
+                    
                     document.getElementById('water-med-tabs').addEventListener('click', (e) => {
                         e.preventDefault();
                         const tab = e.target.closest('a');
