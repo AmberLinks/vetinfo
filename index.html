@@ -89,7 +89,7 @@
     <div class="flex h-screen overflow-hidden">
         <nav id="sidebar" class="w-16 md:w-56 bg-gray-800 text-white flex flex-col transition-all duration-300 flex-shrink-0">
             <div class="px-4 py-5 border-b border-gray-700 flex items-center justify-center md:justify-start">
-                <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v11.494m-9-5.747h18"/>
                 </svg>
                 <h1 class="text-xl font-bold ml-3 hidden md:block">Vet Guide</h1>
@@ -120,7 +120,7 @@
     <script>
         // --- microCMS Configuration ---
         const MICROCMS_CONFIG = {
-            apiKey: '66U37gIl7UHa9gJqv5OyV3OI6IbBh5Awu7jS',
+            apiKey: '66U37gIl7UHa9gJqv5OyV3OI6IbBh5Awu7jS', // 実際のAPIキーに置き換えてください
             serviceDomain: 'vetinfo'
         };
 
@@ -166,7 +166,7 @@
                 return processFetchedData(data.contents);
             } catch (error) {
                 console.error("Failed to fetch from microCMS:", error);
-                setError(detailContent, "コンテンツの読み込みに失敗しました。");
+                setError(detailContent, "コンテンツの読み込みに失敗しました。APIキーとサービスドメインを確認してください。");
                 return {};
             }
         }
@@ -215,7 +215,7 @@
             categoryTitle.textContent = majorCat;
             const contentSubCats = contentData[majorCat] ? Object.keys(contentData[majorCat]) : [];
             const calcSubCats = calculatorDefinitions[majorCat] ? Object.keys(calculatorDefinitions[majorCat]) : [];
-            const allSubCats = [...new Set([...contentSubCats, ...calcSubCats])]; // Use Set to remove duplicates
+            const allSubCats = [...new Set([...contentSubCats, ...calcSubCats])];
 
             itemList.innerHTML = allSubCats.map(subCat => `
                 <li>
@@ -238,7 +238,7 @@
             if (species) {
                 dataRoot = dataRoot[species];
             }
-            const items = Object.keys(dataRoot);
+            const items = Object.keys(dataRoot || {});
 
             let listHtml = `<li><a href="#" class="block px-4 py-3 font-bold text-emerald-600 hover:bg-emerald-50 border-b border-gray-100" data-major-category="${majorCat}" data-sub-category="BACK" data-species="${species || ''}">← 戻る</a></li>`;
             
@@ -266,6 +266,11 @@
                 }
             }
             
+            if (!data) {
+                setError(detailContent, "コンテンツの読み込みに失敗しました。");
+                return;
+            }
+
             if (data.type === 'calculator') {
                 renderCalculator(itemName, data.id);
                 return;
@@ -454,15 +459,16 @@
                             <div><label for="bsa-weight" class="block text-sm font-medium text-gray-700">体重 (kg)</label><input type="number" id="bsa-weight" class="mt-1 calc-input" placeholder="例: 10"></div>
                         </div>`;
                     break;
-                // ### START: UPDATED TRANSFUSION CALCULATOR ###
                 case 'transfusion':
                     html += `
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div><label for="tf-species" class="block text-sm font-medium text-gray-700">受血動物</label>
                                 <select id="tf-species" class="mt-1 calc-input"><option value="dog">犬</option><option value="cat">猫</option></select>
                             </div>
-                            <div><label for="tf-blood-volume" class="block text-sm font-medium text-gray-700">循環血液量 (mL/kg)</label>
+                            <div>
+                                <label for="tf-blood-volume" class="block text-sm font-medium text-gray-700">循環血液量 (mL/kg)</label>
                                 <input type="number" id="tf-blood-volume" class="mt-1 calc-input" value="90">
+                                <div id="tf-blood-volume-info" class="text-xs text-gray-500 mt-1"></div>
                             </div>
                             <div><label for="tf-weight" class="block text-sm font-medium text-gray-700">受血動物の体重 (kg)</label>
                                 <input type="number" id="tf-weight" class="mt-1 calc-input" placeholder="例: 20">
@@ -478,7 +484,6 @@
                             </div>
                         </div>`;
                     break;
-                // ### END: UPDATED TRANSFUSION CALCULATOR ###
                 case 'cri_gamma':
                      html += `
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -503,10 +508,8 @@
                     updateCalculatorUI();
                 }
                 if (id === 'transfusion') {
-                    document.getElementById('tf-species').addEventListener('change', (e) => {
-                        document.getElementById('tf-blood-volume').value = e.target.value === 'dog' ? 90 : 60;
-                        calculate(id);
-                    });
+                    document.getElementById('tf-species').addEventListener('change', () => updateTransfusionUI(id));
+                    updateTransfusionUI(id);
                 }
             }
         }
@@ -520,20 +523,36 @@
             document.getElementById('lactation-options').classList.toggle('hidden', purpose !== 'lactation');
             
             if (purpose === 'growth') {
-                document.querySelector('#age_stage option[value="puppy_young"]').disabled = (species === 'cat');
-                document.querySelector('#age_stage option[value="puppy_old"]').disabled = (species === 'cat');
-                document.querySelector('#age_stage option[value="kitten"]').disabled = (species === 'dog');
-                if (species === 'cat') document.getElementById('age_stage').value = 'kitten';
-                if (species === 'dog' && (document.getElementById('age_stage').value === 'kitten')) {
-                    document.getElementById('age_stage').value = 'puppy_young';
+                const ageStageSelect = document.getElementById('age_stage');
+                ageStageSelect.querySelector('option[value="puppy_young"]').disabled = (species === 'cat');
+                ageStageSelect.querySelector('option[value="puppy_old"]').disabled = (species === 'cat');
+                ageStageSelect.querySelector('option[value="kitten"]').disabled = (species === 'dog');
+                if (species === 'cat') {
+                    ageStageSelect.value = 'kitten';
+                } else if (ageStageSelect.value === 'kitten') {
+                    ageStageSelect.value = 'puppy_young';
                 }
             }
+        }
+
+        function updateTransfusionUI(calculatorId) {
+            const species = document.getElementById('tf-species').value;
+            const bloodVolumeInput = document.getElementById('tf-blood-volume');
+            const infoDiv = document.getElementById('tf-blood-volume-info');
+            
+            if (species === 'dog') {
+                bloodVolumeInput.value = 90;
+                infoDiv.innerHTML = '<b>約 80–90 mL/kg:</b> 大型犬やスポーツ犬ではやや多め。成書・血液バンク指針ともにこの範囲を採用。';
+            } else { // cat
+                bloodVolumeInput.value = 60;
+                infoDiv.innerHTML = '<b>約 50–60 mL/kg:</b> 小型動物は体重あたり血液量が少なめ。ISFMなどでは55-60mL/kgを基準にすることが多い。';
+            }
+            calculate(calculatorId);
         }
 
         function calculate(id) {
             const resultBox = document.getElementById(`calc-result-${id}`);
             if (!resultBox) return;
-            let inputs = {};
             let resultHtml = '';
             
             try {
@@ -541,18 +560,15 @@
                     case 'calorie_dogcat_detailed':
                         const species = document.getElementById('species').value;
                         const bw_kg = parseFloat(document.getElementById('bw_kg').value);
+                        if (isNaN(bw_kg) || bw_kg <= 0) throw new Error();
+                        
                         const purpose = document.getElementById('purpose').value;
                         const rer_formula = document.getElementById('rer_formula').value;
                         const food_density = parseFloat(document.getElementById('food_density').value);
 
-                        if (isNaN(bw_kg) || bw_kg <= 0) {
-                            resultBox.classList.add('hidden');
-                            return;
-                        }
-
                         let rer = 0;
                         let rer_formula_text = '';
-                        if (rer_formula === 'exponential') {
+                        if (rer_formula === 'exponential' || bw_kg < 2 || bw_kg > 45) {
                             rer = 70 * Math.pow(bw_kg, 0.75);
                             rer_formula_text = `RER = 70 * (${bw_kg}^0.75) = ${rer.toFixed(1)} kcal/日`;
                         } else {
@@ -629,14 +645,29 @@ ${foodAmount > 0 ? `給与量 = DER / (フードkcal/100g) * 100 = ${mer.toFixed
                         break;
                     
                     case 'bsa':
-                        inputs = {
-                            w: parseFloat(document.getElementById('bsa-weight').value),
-                            s: document.getElementById('bsa-species').value
-                        };
-                        if (isNaN(inputs.w) || inputs.w <= 0) throw new Error();
-                        const k = inputs.s === 'dog' ? 10.1 : 10.0;
-                        const bsa = k * Math.pow(inputs.w * 1000, 2/3) / 10000;
-                        resultHtml = `...`; // BSA result HTML remains the same
+                        const bsa_weight = parseFloat(document.getElementById('bsa-weight').value);
+                        const bsa_species = document.getElementById('bsa-species').value
+                        if (isNaN(bsa_weight) || bsa_weight <= 0) throw new Error();
+                        const k = bsa_species === 'dog' ? 10.1 : 10.0;
+                        const bsa = k * Math.pow(bsa_weight * 1000, 2/3) / 10000;
+                        resultHtml = `
+                            <h4 class="font-semibold text-lg mb-2">計算結果</h4>
+                            <p class="text-xl font-bold mt-2 text-emerald-700"><strong>体表面積 (BSA):</strong> ${bsa.toFixed(4)} m²</p>
+                            <h5 class="font-semibold mt-4 mb-1">計算過程</h5>
+                            <div class="calc-formula">
+BSA (m²) = (K * (体重(g) ^ (2/3))) / 10000
+  = (${k} * ((${bsa_weight}*1000) ^ (2/3))) / 10000 = ${bsa.toFixed(4)}
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold text-lg mb-2">BSA早見表</h4>
+                                <div class="table-container">
+                                    <table class="custom-table text-sm">
+                                        <thead><tr><th>体重(kg)</th><th>BSA(m²)</th><th>体重(kg)</th><th>BSA(m²)</th><th>体重(kg)</th><th>BSA(m²)</th></tr></thead>
+                                        <tbody id="bsa-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            `;
                         break;
 
                     case 'transfusion':
@@ -654,7 +685,6 @@ ${foodAmount > 0 ? `給与量 = DER / (フードkcal/100g) * 100 = ${mer.toFixed
                         const rule_of_thumb_blood = 2 * tf_bw * pcv_rise;
                         const max_draw_rate = tf_species === 'dog' ? 15 : 10;
                         const max_draw_vol = max_draw_rate * tf_bw;
-
 
                         resultHtml = `
                             <h4 class="font-semibold text-lg mb-2">計算結果</h4>
@@ -685,7 +715,7 @@ ${foodAmount > 0 ? `給与量 = DER / (フードkcal/100g) * 100 = ${mer.toFixed
                 resultBox.classList.remove('hidden');
 
                 if (id === 'bsa') {
-                    generateBsaTable(inputs.s);
+                    generateBsaTable(document.getElementById('bsa-species').value);
                 }
 
             } catch (e) {
