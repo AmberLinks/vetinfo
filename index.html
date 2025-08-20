@@ -117,7 +117,12 @@
         </main>
     </div>
 
-    <script src="calculators.js" defer></script>
+    <script src="calculator-main.js" defer></script>
+    <script src="calculators-nutrition.js" defer></script>
+    <script src="calculators-infusion.js" defer></script>
+    <script src="calculators-pharmacy.js" defer></script>
+    <script src="calculators-diagnostic.js" defer></script>
+    <script src="calculators-exotic.js" defer></script>
 
     <script>
         // --- microCMS Configuration ---
@@ -290,7 +295,7 @@
             }
 
             if (data.type === 'calculator') {
-                renderCalculator(itemName, data.id);
+                renderCalculator(itemName, data.id); // This now calls the function in calculator-main.js
                 return;
             }
 
